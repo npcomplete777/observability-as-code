@@ -1,0 +1,28 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: db-client-operation-failures
+  namespace: otel-demo
+  labels:
+    app.kubernetes.io/managed-by: dash0-operator
+spec:
+  groups:
+    - name: database-alerts
+      interval: 2m
+      rules:
+        - alert: DbClientOperationFailures
+          expr: >-
+            sum(rate({otel_metric_name="db.client.operation.failed"}[5m])) > 0
+          for: 5m
+          labels:
+            severity: critical
+            domain: database
+            source: kibana-migration
+          annotations:
+            summary: "Database client operations are failing"
+            description: >-
+              Migrated from Kibana rule: [DB] Client Operation Failures
+              (type: .es-query). Original rule checked otel-metrics* for
+              db.client.operation.failed > 0 with > 5 hits in 5m window,
+              evaluated every 2m. The Dash0 equivalent queries the
+              db.client.operation.failed OTel metric directly via PromQL.
