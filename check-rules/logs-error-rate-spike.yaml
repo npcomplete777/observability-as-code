@@ -1,0 +1,31 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: logs-error-rate-spike
+  namespace: otel-demo
+  labels:
+    app.kubernetes.io/managed-by: dash0-operator
+spec:
+  groups:
+    - name: log-alerts
+      interval: 2m
+      rules:
+        - alert: LogsErrorRateSpike
+          expr: >-
+            sum(rate({otel_metric_name="dash0.logs",
+              otel_log_severity_text="ERROR",
+              service_name!="load-generator"}[5m])) > 0.067
+          for: 5m
+          labels:
+            severity: critical
+            domain: logs
+            source: kibana-migration
+          annotations:
+            summary: "Error log rate spike detected (excluding load-generator)"
+            description: >-
+              Migrated from Kibana rule: [Logs] Error Rate Spike
+              (type: .es-query). Original rule checked otel-logs* for ERROR-level
+              logs (excluding load-generator service) with > 20 hits in 5m window,
+              evaluated every 2m. The Dash0 equivalent queries the dash0.logs
+              metric filtered by severity and service_name via PromQL.
+              Threshold approximated as 20 events / 5 min = ~0.067/s rate.
