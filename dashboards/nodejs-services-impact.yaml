@@ -1,0 +1,273 @@
+apiVersion: perses.dev/v1alpha1
+kind: PersesDashboard
+metadata:
+  name: nodejs-services-impact
+  namespace: otel-demo
+  labels:
+    app.kubernetes.io/managed-by: dash0-operator
+    dash0.com/origin: api-a3d08c0b-1528-4cf4-a586-d39627be597a
+spec:
+  display:
+    name: 'Node.js Services: Feature Flag Impact Analysis'
+  duration: 1h
+  layouts:
+  - kind: Grid
+    spec:
+      display:
+        collapse:
+          open: true
+        title: Service Overview
+      items:
+      - content:
+          $ref: '#/spec/panels/request-volume-by-service'
+        height: 8
+        width: 12
+        x: 0
+        y: 0
+      - content:
+          $ref: '#/spec/panels/error-rate-by-service'
+        height: 8
+        width: 12
+        x: 12
+        y: 0
+  - kind: Grid
+    spec:
+      display:
+        collapse:
+          open: true
+        title: Operations & Downstream
+      items:
+      - content:
+          $ref: '#/spec/panels/top-failing-operations'
+        height: 8
+        width: 12
+        x: 0
+        y: 0
+      - content:
+          $ref: '#/spec/panels/frontend-downstream-calls'
+        height: 8
+        width: 12
+        x: 12
+        y: 0
+  - kind: Grid
+    spec:
+      display:
+        collapse:
+          open: true
+        title: Logs & Feature Flags
+      items:
+      - content:
+          $ref: '#/spec/panels/log-volume-by-severity'
+        height: 8
+        width: 12
+        x: 0
+        y: 0
+      - content:
+          $ref: '#/spec/panels/feature-flag-events'
+        height: 8
+        width: 12
+        x: 12
+        y: 0
+  - kind: Grid
+    spec:
+      display:
+        collapse:
+          open: true
+        title: Error Details
+      items:
+      - content:
+          $ref: '#/spec/panels/error-span-details'
+        height: 10
+        width: 24
+        x: 0
+        y: 0
+  panels:
+    request-volume-by-service:
+      kind: Panel
+      spec:
+        display:
+          name: Request Volume by Service
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              position: right
+            yAxis:
+              label: req/s
+            visual:
+              areaOpacity: 0.55
+              display: line
+              stacking: normal
+        queries:
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: >-
+                  sum by (service_name) (rate({otel_metric_name="dash0.spans", service_name=~"frontend|search|payment"}[$__rate_interval]))
+                seriesNameFormat: '{{service_name}}'
+                datasource:
+                  kind: PrometheusDatasource
+                  spec:
+                    dataset: astronomy-demo
+    error-rate-by-service:
+      kind: Panel
+      spec:
+        display:
+          name: Error Rate by Service
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              position: right
+            yAxis:
+              label: errors/s
+            visual:
+              areaOpacity: 0.55
+              display: line
+              stacking: normal
+        queries:
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: >-
+                  sum by (service_name) (rate({otel_metric_name="dash0.spans", otel_span_status_code="ERROR", service_name=~"frontend|search|payment"}[$__rate_interval]))
+                seriesNameFormat: '{{service_name}}'
+                datasource:
+                  kind: PrometheusDatasource
+                  spec:
+                    dataset: astronomy-demo
+    top-failing-operations:
+      kind: Panel
+      spec:
+        display:
+          name: Top Failing Operations
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              position: right
+            yAxis:
+              label: errors/s
+            visual:
+              display: bar
+              stacking: normal
+        queries:
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: >-
+                  topk(10, sum by (dash0_operation_name) (rate({otel_metric_name="dash0.spans", otel_span_status_code="ERROR", service_name=~"frontend|search|payment"}[$__rate_interval])))
+                seriesNameFormat: '{{dash0_operation_name}}'
+                datasource:
+                  kind: PrometheusDatasource
+                  spec:
+                    dataset: astronomy-demo
+    frontend-downstream-calls:
+      kind: Panel
+      spec:
+        display:
+          name: Frontend Downstream Calls
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              position: right
+            visual:
+              areaOpacity: 0.55
+              display: line
+              stacking: normal
+        queries:
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: >-
+                  sum by (http_route) (rate({otel_metric_name="dash0.spans", service_name="frontend", http_route!=""}[$__rate_interval]))
+                seriesNameFormat: '{{http_route}}'
+                datasource:
+                  kind: PrometheusDatasource
+                  spec:
+                    dataset: astronomy-demo
+    log-volume-by-severity:
+      kind: Panel
+      spec:
+        display:
+          name: Log Volume by Severity
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              position: right
+            visual:
+              areaOpacity: 0.55
+              display: line
+              stacking: normal
+        queries:
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: >-
+                  sum by (otel_log_severity_range) (rate({otel_metric_name="dash0.logs", service_name=~"frontend|search|payment"}[$__rate_interval]))
+                seriesNameFormat: '{{otel_log_severity_range}}'
+                datasource:
+                  kind: PrometheusDatasource
+                  spec:
+                    dataset: astronomy-demo
+    feature-flag-events:
+      kind: Panel
+      spec:
+        display:
+          name: Feature Flag Resolution Events
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              position: right
+        queries:
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: >-
+                  sum by (feature_flag_key) (rate({otel_metric_name="dash0.spans", feature_flag_key!="", service_name=~"frontend|search|payment"}[$__rate_interval]))
+                seriesNameFormat: '{{feature_flag_key}}'
+                datasource:
+                  kind: PrometheusDatasource
+                  spec:
+                    dataset: astronomy-demo
+    error-span-details:
+      kind: Panel
+      spec:
+        display:
+          name: Error Span Details
+        plugin:
+          kind: TimeSeriesTable
+          spec:
+            format:
+              decimalPlaces: 4
+              shortValues: false
+              unit: decimal
+        queries:
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: >-
+                  topk(20, sum by (service_name, dash0_operation_name) (rate({otel_metric_name="dash0.spans", otel_span_status_code="ERROR", service_name=~"frontend|search|payment"}[$__rate_interval])))
+                seriesNameFormat: '{{service_name}} -> {{dash0_operation_name}}'
+                datasource:
+                  kind: PrometheusDatasource
+                  spec:
+                    dataset: astronomy-demo
+  variables: []
