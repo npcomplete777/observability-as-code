@@ -23,7 +23,7 @@ spec:
           allowInsecure: false
         tracing:
           addTracingHeaders: false
-  assertions: []
+      assertions: []
   notifications:
     channels: []
   retries:
