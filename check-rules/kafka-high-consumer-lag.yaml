@@ -1,0 +1,29 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: kafka-high-consumer-lag
+  namespace: otel-demo
+  labels:
+    app.kubernetes.io/managed-by: dash0-operator
+spec:
+  groups:
+    - name: kafka-alerts
+      interval: 2m
+      rules:
+        - alert: KafkaHighConsumerLag
+          expr: >-
+            max({otel_metric_name="kafka.consumer.records_lag_max"}) > 1000
+          for: 5m
+          labels:
+            severity: critical
+            component: consumer
+            domain: kafka
+            source: kibana-migration
+          annotations:
+            summary: "Kafka consumer lag exceeds 1000 records"
+            description: >-
+              Migrated from Kibana rule: [Kafka] High Consumer Lag (>1000 records)
+              (type: .es-query). Original rule checked otel-metrics* for
+              kafka.consumer.records_lag_max >= 1000 with > 3 hits in 5m window,
+              evaluated every 2m. The Dash0 equivalent queries the
+              kafka.consumer.records_lag_max OTel metric directly via PromQL.
