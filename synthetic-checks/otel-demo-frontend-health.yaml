@@ -1,4 +1,4 @@
-apiVersion: operator.dash0.com/v1beta1
+apiVersion: operator.dash0.com/v1alpha1
 kind: Dash0SyntheticCheck
 metadata:
   name: otel-demo-frontend-health
