@@ -1,0 +1,31 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: no-traces-received-data-gap
+  namespace: otel-demo
+  labels:
+    app.kubernetes.io/managed-by: dash0-operator
+spec:
+  groups:
+    - name: data-gap-alerts
+      interval: 5m
+      rules:
+        - alert: NoTracesReceivedDataGap
+          expr: >-
+            absent_over_time({otel_metric_name="dash0.spans"}[10m])
+            or
+            sum(rate({otel_metric_name="dash0.spans"}[10m])) == 0
+          for: 10m
+          labels:
+            severity: critical
+            domain: data-gap
+            signal: traces
+            source: kibana-migration
+          annotations:
+            summary: "No trace data received in the last 10 minutes"
+            description: >-
+              Migrated from Kibana rule: [Data] No Traces Received (data gap)
+              (type: .index-threshold). Original rule checked otel-traces* index
+              for document count < 1 in 10m window, evaluated every 5m.
+              The Dash0 equivalent uses absent_over_time to detect missing span
+              ingest via PromQL.
