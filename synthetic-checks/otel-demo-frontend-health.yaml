@@ -1,11 +1,10 @@
 apiVersion: operator.dash0.com/v1alpha1
 kind: Dash0SyntheticCheck
 metadata:
-  name: otel-demo-frontend-health
+  name: o11y-alchemy-telemetry-cost
   namespace: otel-demo
   labels:
     app.kubernetes.io/managed-by: dash0-operator
-    dash0.com/origin: api-14a44519-62e1-4185-b89d-8bbd79012cbe
 spec:
   display:
     name: ""
@@ -16,7 +15,7 @@ spec:
       request:
         method: get
         redirects: follow
-        url: https://demo.dash0.com
+        url: https://o11y-alchemy.com/telemetry/cost
         headers: []
         queryParameters: []
         tls:
@@ -29,14 +28,11 @@ spec:
   notifications:
     channels: []
   retries:
-    kind: linear
-    spec:
-      attempts: 2
-      delay: 5s
-      maximumDelay: 30s
+    kind: "off"
+    spec: {}
   schedule:
     interval: 5m
     locations:
-      - eu-west-1
-      - us-east-1
+      - de-frankfurt
+      - uk-london
     strategy: all_locations
