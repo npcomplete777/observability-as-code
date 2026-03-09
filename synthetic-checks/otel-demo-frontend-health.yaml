@@ -1,0 +1,26 @@
+apiVersion: operator.dash0.com/v1beta1
+kind: Dash0SyntheticCheck
+metadata:
+  name: otel-demo-frontend-health
+  namespace: otel-demo
+  labels:
+    app.kubernetes.io/managed-by: dash0-operator
+    dash0.com/origin: api-14a44519-62e1-4185-b89d-8bbd79012cbe
+spec:
+  enabled: true
+  plugin:
+    kind: http
+    spec:
+      request:
+        method: get
+        redirects: follow
+        url: https://demo.dash0.com
+  retries:
+    count: 2
+    delay: 5s
+  schedule:
+    interval: 5m
+    locations:
+      - eu-west-1
+      - us-east-1
+    strategy: all_locations
