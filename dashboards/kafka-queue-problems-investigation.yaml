@@ -171,7 +171,8 @@ spec:
             plugin:
               kind: PrometheusTimeSeriesQuery
               spec:
-                query: sum(increase({otel_metric_name="dash0.spans", otel_span_status_code="ERROR"}[30m]))
+                query: >-
+                  sum(increase({otel_metric_name="dash0.spans", otel_span_status_code="ERROR"}[30m]))
                 seriesNameFormat: Error Spans
     services-with-errors:
       kind: Panel
@@ -199,7 +200,8 @@ spec:
             plugin:
               kind: PrometheusTimeSeriesQuery
               spec:
-                query: count(count by (service_name) (rate({otel_metric_name="dash0.spans", otel_span_status_code="ERROR"}[$__rate_interval]) > 0))
+                query: >-
+                  count(count by (service_name) (rate({otel_metric_name="dash0.spans", otel_span_status_code="ERROR"}[$__rate_interval]) > 0))
                 seriesNameFormat: Affected Services
     overall-error-rate:
       kind: Panel
@@ -227,7 +229,8 @@ spec:
             plugin:
               kind: PrometheusTimeSeriesQuery
               spec:
-                query: sum(rate({otel_metric_name="dash0.spans", otel_span_status_code="ERROR"}[$__rate_interval])) / clamp_min(sum(rate({otel_metric_name="dash0.spans"}[$__rate_interval])), 1e-10) * 100
+                query: >-
+                  sum(rate({otel_metric_name="dash0.spans", otel_span_status_code="ERROR"}[$__rate_interval])) / clamp_min(sum(rate({otel_metric_name="dash0.spans"}[$__rate_interval])), 1e-10) * 100
                 seriesNameFormat: Error %
     error-rate-by-service:
       kind: Panel
@@ -247,8 +250,8 @@ spec:
             plugin:
               kind: PrometheusTimeSeriesQuery
               spec:
-                query: topk(10, sum by (service_name) (rate({otel_metric_name="dash0.spans", otel_span_status_code="ERROR"}[$__rate_interval])) / clamp_min(sum by (service_name) (rate({otel_metric_name="dash0.spans"}[$__rate_interval])),
-                  1e-10) * 100)
+                query: >-
+                  topk(10, sum by (service_name) (rate({otel_metric_name="dash0.spans", otel_span_status_code="ERROR"}[$__rate_interval])) / clamp_min(sum by (service_name) (rate({otel_metric_name="dash0.spans"}[$__rate_interval])), 1e-10) * 100)
                 seriesNameFormat: '{{service_name}}'
     error-span-rate-by-service-absolute:
       kind: Panel
@@ -268,7 +271,8 @@ spec:
             plugin:
               kind: PrometheusTimeSeriesQuery
               spec:
-                query: topk(10, sum by (service_name) (rate({otel_metric_name="dash0.spans", otel_span_status_code="ERROR"}[$__rate_interval])))
+                query: >-
+                  topk(10, sum by (service_name) (rate({otel_metric_name="dash0.spans", otel_span_status_code="ERROR"}[$__rate_interval])))
                 seriesNameFormat: '{{service_name}}'
     p50-span-duration-by-service-ms:
       kind: Panel
@@ -288,7 +292,8 @@ spec:
             plugin:
               kind: PrometheusTimeSeriesQuery
               spec:
-                query: topk(10, histogram_quantile(0.50, sum by (service_name, le) (rate(dash0_spans_duration_bucket[$__rate_interval]))) * 1000)
+                query: >-
+                  topk(10, histogram_quantile(0.50, sum by (service_name, le) (rate({otel_metric_name="dash0.spans.duration"}[$__rate_interval]))) * 1000)
                 seriesNameFormat: '{{service_name}}'
     avg-span-duration-kafka-adjacent-ms:
       kind: Panel
@@ -308,16 +313,16 @@ spec:
             plugin:
               kind: PrometheusTimeSeriesQuery
               spec:
-                query: topk(10, sum by (service_name) (rate({otel_metric_name="dash0.spans.duration_sum"}[$__rate_interval])) / clamp_min(sum by (service_name) (rate({otel_metric_name="dash0.spans.duration_count"}[$__rate_interval])),
-                  1e-10) * 1000)
+                query: >-
+                  topk(10, histogram_quantile(0.50, sum by (service_name, le) (rate({otel_metric_name="dash0.spans.duration", service_name=~"accounting|checkout|payment|fraud-detection|notification|order|kafka|ad|flagd|inventory"}[$__rate_interval]))) * 1000)
                 seriesNameFormat: 'avg: {{service_name}}'
         - kind: TimeSeriesQuery
           spec:
             plugin:
               kind: PrometheusTimeSeriesQuery
               spec:
-                query: histogram_quantile(0.99, sum by (service_name, le) (rate(dash0_spans_duration_bucket{service_name=~"accounting|checkout|payment|fraud-detection|notification|order|kafka|ad|flagd|inventory"}[$__rate_interval])))
-                  * 1000
+                query: >-
+                  histogram_quantile(0.99, sum by (service_name, le) (rate({otel_metric_name="dash0.spans.duration", service_name=~"accounting|checkout|payment|fraud-detection|notification|order|kafka|ad|flagd|inventory"}[$__rate_interval]))) * 1000
                 seriesNameFormat: 'p99: {{service_name}}'
     kafka-operation-span-rate:
       kind: Panel
@@ -337,7 +342,8 @@ spec:
             plugin:
               kind: PrometheusTimeSeriesQuery
               spec:
-                query: sum by (dash0_operation_name) (rate({otel_metric_name="dash0.spans", dash0_operation_name=~".*send.*|.*receive.*|.*process.*|.*publish.*|.*produce.*|.*consume.*|.*kafka.*|.*orders.*|.*oteldemo.*"}[$__rate_interval]))
+                query: >-
+                  sum by (dash0_operation_name) (rate({otel_metric_name="dash0.spans", dash0_operation_name=~".*send.*|.*receive.*|.*process.*|.*publish.*|.*produce.*|.*consume.*|.*kafka.*|.*orders.*|.*oteldemo.*"}[$__rate_interval]))
                 seriesNameFormat: '{{dash0_operation_name}}'
     kafka-operation-error-rate:
       kind: Panel
@@ -357,7 +363,8 @@ spec:
             plugin:
               kind: PrometheusTimeSeriesQuery
               spec:
-                query: sum by (dash0_operation_name) (rate({otel_metric_name="dash0.spans", otel_span_status_code="ERROR", dash0_operation_name=~".*send.*|.*receive.*|.*process.*|.*publish.*|.*produce.*|.*consume.*|.*kafka.*|.*orders.*|.*oteldemo.*"}[$__rate_interval]))
+                query: >-
+                  sum by (dash0_operation_name) (rate({otel_metric_name="dash0.spans", otel_span_status_code="ERROR", dash0_operation_name=~".*send.*|.*receive.*|.*process.*|.*publish.*|.*produce.*|.*consume.*|.*kafka.*|.*orders.*|.*oteldemo.*"}[$__rate_interval]))
                 seriesNameFormat: '{{dash0_operation_name}}'
     error-logs-by-service:
       kind: Panel
@@ -377,7 +384,8 @@ spec:
             plugin:
               kind: PrometheusTimeSeriesQuery
               spec:
-                query: topk(10, sum by (service_name) (rate({otel_metric_name="dash0.logs", otel_log_severity_range=~"ERROR|FATAL"}[$__rate_interval])))
+                query: >-
+                  topk(10, sum by (service_name) (rate({otel_metric_name="dash0.logs", otel_log_severity_range=~"ERROR|FATAL"}[$__rate_interval])))
                 seriesNameFormat: '{{service_name}}'
     warning-error-log-volume-kafka-adjacent:
       kind: Panel
@@ -397,7 +405,8 @@ spec:
             plugin:
               kind: PrometheusTimeSeriesQuery
               spec:
-                query: sum by (service_name) (rate({otel_metric_name="dash0.logs", otel_log_severity_range=~"WARN|ERROR|FATAL", service_name=~"accounting|checkout|payment|fraud-detection|notification|order|kafka|ad|flagd|inventory"}[$__rate_interval]))
+                query: >-
+                  sum by (service_name) (rate({otel_metric_name="dash0.logs", otel_log_severity_range=~"WARN|ERROR|FATAL", service_name=~"accounting|checkout|payment|fraud-detection|notification|order|kafka|ad|flagd|inventory"}[$__rate_interval]))
                 seriesNameFormat: '{{service_name}}'
     downstream-throughput-impact:
       kind: Panel
@@ -417,7 +426,8 @@ spec:
             plugin:
               kind: PrometheusTimeSeriesQuery
               spec:
-                query: sum by (service_name) (rate({otel_metric_name="dash0.spans", service_name=~"order|checkout|payment|accounting|fraud-detection|notification|recommendation|email|shipping"}[$__rate_interval]))
+                query: >-
+                  sum by (service_name) (rate({otel_metric_name="dash0.spans", service_name=~"order|checkout|payment|accounting|fraud-detection|notification|recommendation|email|shipping"}[$__rate_interval]))
                 seriesNameFormat: '{{service_name}}'
     downstream-error-rate:
       kind: Panel
@@ -437,9 +447,8 @@ spec:
             plugin:
               kind: PrometheusTimeSeriesQuery
               spec:
-                query: sum by (service_name) (rate({otel_metric_name="dash0.spans", otel_span_status_code="ERROR", service_name=~"order|checkout|payment|accounting|fraud-detection|notification|recommendation|email|shipping"}[$__rate_interval]))
-                  / clamp_min(sum by (service_name) (rate({otel_metric_name="dash0.spans", service_name=~"order|checkout|payment|accounting|fraud-detection|notification|recommendation|email|shipping"}[$__rate_interval])),
-                  1e-10) * 100
+                query: >-
+                  sum by (service_name) (rate({otel_metric_name="dash0.spans", otel_span_status_code="ERROR", service_name=~"order|checkout|payment|accounting|fraud-detection|notification|recommendation|email|shipping"}[$__rate_interval])) / clamp_min(sum by (service_name) (rate({otel_metric_name="dash0.spans", service_name=~"order|checkout|payment|accounting|fraud-detection|notification|recommendation|email|shipping"}[$__rate_interval])), 1e-10) * 100
                 seriesNameFormat: '{{service_name}}'
     error-breakdown-service-x-operation-top-20:
       kind: Panel
@@ -459,6 +468,7 @@ spec:
             plugin:
               kind: PrometheusTimeSeriesQuery
               spec:
-                query: topk(20, sum by (service_name, dash0_operation_name) (rate({otel_metric_name="dash0.spans", otel_span_status_code="ERROR"}[$__rate_interval])))
+                query: >-
+                  topk(20, sum by (service_name, dash0_operation_name) (rate({otel_metric_name="dash0.spans", otel_span_status_code="ERROR"}[$__rate_interval])))
                 seriesNameFormat: '{{service_name}} -> {{dash0_operation_name}}'
   variables: []
