@@ -8,7 +8,7 @@ metadata:
     dash0.com/origin: api-14a44519-62e1-4185-b89d-8bbd79012cbe
 spec:
   display:
-    name: ''
+    name: ""
   enabled: true
   plugin:
     kind: http
@@ -17,11 +17,13 @@ spec:
         method: get
         redirects: follow
         url: https://demo.dash0.com
-        headers: {}
-        queryParameters: {}
-        tls: {}
-        tracing: {}
-  assertions: {}
+        headers: []
+        queryParameters: []
+        tls:
+          allowInsecure: false
+        tracing:
+          addTracingHeaders: false
+  assertions: []
   notifications:
     channels: []
   retries:
@@ -32,6 +34,6 @@ spec:
   schedule:
     interval: 5m
     locations:
-    - eu-west-1
-    - us-east-1
+      - eu-west-1
+      - us-east-1
     strategy: all_locations
