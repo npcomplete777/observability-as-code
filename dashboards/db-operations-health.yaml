@@ -1,0 +1,321 @@
+apiVersion: perses.dev/v1alpha1
+kind: PersesDashboard
+metadata:
+  name: db-operations-health
+  namespace: otel-demo
+  labels:
+    app.kubernetes.io/managed-by: dash0-operator
+    dash0.com/origin: api-25417917-eed5-434a-ba1b-5b0d474e45d2
+spec:
+  display:
+    name: Database Operations Health
+  duration: 1h
+  layouts:
+  - kind: Grid
+    spec:
+      display:
+        collapse:
+          open: true
+        title: KPIs
+      items:
+      - content:
+          $ref: '#/spec/panels/failed-db-ops'
+        height: 5
+        width: 8
+        x: 0
+        y: 0
+      - content:
+          $ref: '#/spec/panels/avg-db-connections'
+        height: 5
+        width: 8
+        x: 8
+        y: 0
+      - content:
+          $ref: '#/spec/panels/max-db-conn-limit'
+        height: 5
+        width: 8
+        x: 16
+        y: 0
+  - kind: Grid
+    spec:
+      display:
+        collapse:
+          open: true
+        title: Failures Over Time
+      items:
+      - content:
+          $ref: '#/spec/panels/db-failures-over-time'
+        height: 8
+        width: 24
+        x: 0
+        y: 0
+  - kind: Grid
+    spec:
+      display:
+        collapse:
+          open: true
+        title: Connections
+      items:
+      - content:
+          $ref: '#/spec/panels/db-connections-over-time'
+        height: 8
+        width: 24
+        x: 0
+        y: 0
+  - kind: Grid
+    spec:
+      display:
+        collapse:
+          open: true
+        title: I/O & Pool
+      items:
+      - content:
+          $ref: '#/spec/panels/db-io-bytes'
+        height: 8
+        width: 12
+        x: 0
+        y: 0
+      - content:
+          $ref: '#/spec/panels/sql-connection-pool'
+        height: 8
+        width: 12
+        x: 12
+        y: 0
+  panels:
+    failed-db-ops:
+      kind: Panel
+      spec:
+        display:
+          name: Failed DB Operations
+        plugin:
+          kind: StatChart
+          spec:
+            calculation: last-number
+            format:
+              shortValues: true
+              unit: decimal
+            thresholds:
+              steps:
+              - color: '#7dc540'
+                value: 0
+              - color: '#f5d30f'
+                value: 10
+              - color: '#dc172a'
+                value: 100
+        queries:
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: >-
+                  sum(increase({otel_metric_name="db.client.operation.failed", otel_metric_type="sum"}[30m]))
+                seriesNameFormat: Failed Ops
+                datasource:
+                  kind: PrometheusDatasource
+                  spec:
+                    dataset: astronomy-demo
+    avg-db-connections:
+      kind: Panel
+      spec:
+        display:
+          name: Avg DB Connections
+        plugin:
+          kind: StatChart
+          spec:
+            calculation: last-number
+            format:
+              shortValues: true
+              unit: decimal
+        queries:
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: >-
+                  avg({otel_metric_name="db.client.connection.count", otel_metric_type="gauge"})
+                seriesNameFormat: Avg Connections
+                datasource:
+                  kind: PrometheusDatasource
+                  spec:
+                    dataset: astronomy-demo
+    max-db-conn-limit:
+      kind: Panel
+      spec:
+        display:
+          name: Max DB Connection Limit
+        plugin:
+          kind: StatChart
+          spec:
+            calculation: last-number
+            format:
+              shortValues: true
+              unit: decimal
+        queries:
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: >-
+                  max({otel_metric_name="db.client.connection.max", otel_metric_type="gauge"})
+                seriesNameFormat: Max Limit
+                datasource:
+                  kind: PrometheusDatasource
+                  spec:
+                    dataset: astronomy-demo
+    db-failures-over-time:
+      kind: Panel
+      spec:
+        display:
+          name: DB Operation Failures Over Time
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              position: right
+            yAxis:
+              label: Failed Operations
+            visual:
+              display: bar
+        queries:
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: >-
+                  increase({otel_metric_name="db.client.operation.failed", otel_metric_type="sum"}[$__rate_interval])
+                seriesNameFormat: Failed Operations
+                datasource:
+                  kind: PrometheusDatasource
+                  spec:
+                    dataset: astronomy-demo
+    db-connections-over-time:
+      kind: Panel
+      spec:
+        display:
+          name: DB Connection Count Over Time
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              position: right
+            yAxis:
+              label: Connections
+        queries:
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: >-
+                  avg({otel_metric_name="db.client.connection.count", otel_metric_type="gauge"})
+                seriesNameFormat: Avg Connections
+                datasource:
+                  kind: PrometheusDatasource
+                  spec:
+                    dataset: astronomy-demo
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: >-
+                  max({otel_metric_name="db.client.connection.max", otel_metric_type="gauge"})
+                seriesNameFormat: Max Limit
+                datasource:
+                  kind: PrometheusDatasource
+                  spec:
+                    dataset: astronomy-demo
+    db-io-bytes:
+      kind: Panel
+      spec:
+        display:
+          name: 'DB I/O: Bytes Read vs Written'
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              position: right
+            yAxis:
+              label: Bytes
+            visual:
+              areaOpacity: 0.55
+              display: line
+        queries:
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: >-
+                  avg({otel_metric_name="db.client.operation.npgsql.bytes_read", otel_metric_type="gauge"})
+                seriesNameFormat: Bytes Read
+                datasource:
+                  kind: PrometheusDatasource
+                  spec:
+                    dataset: astronomy-demo
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: >-
+                  avg({otel_metric_name="db.client.operation.npgsql.bytes_written", otel_metric_type="gauge"})
+                seriesNameFormat: Bytes Written
+                datasource:
+                  kind: PrometheusDatasource
+                  spec:
+                    dataset: astronomy-demo
+    sql-connection-pool:
+      kind: Panel
+      spec:
+        display:
+          name: SQL Connection Pool
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              position: right
+            yAxis:
+              label: Connections
+        queries:
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: >-
+                  avg({otel_metric_name="db.sql.connection.open", otel_metric_type="gauge"})
+                seriesNameFormat: Open Connections
+                datasource:
+                  kind: PrometheusDatasource
+                  spec:
+                    dataset: astronomy-demo
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: >-
+                  avg({otel_metric_name="db.sql.connection.max_open", otel_metric_type="gauge"})
+                seriesNameFormat: Max Open
+                datasource:
+                  kind: PrometheusDatasource
+                  spec:
+                    dataset: astronomy-demo
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: >-
+                  avg({otel_metric_name="db.sql.connection.wait", otel_metric_type="gauge"})
+                seriesNameFormat: Waiting
+                datasource:
+                  kind: PrometheusDatasource
+                  spec:
+                    dataset: astronomy-demo
+  variables: []
