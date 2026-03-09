@@ -8,150 +8,457 @@ metadata:
     dash0.com/origin: api-e177d24c-dd2d-4421-9499-d66f8985693e
 spec:
   display:
-    name: "Kafka Queue Problems - Feature Flag Investigation"
+    name: Kafka Queue Problems - Feature Flag Investigation
   duration: 30m
   layouts:
-    - kind: Grid
-      spec:
-        display: { collapse: { open: true }, title: "Error Impact Overview" }
-        items:
-          - { content: { $ref: '#/spec/panels/0' }, height: 5, width: 8, x: 0, y: 0 }
-          - { content: { $ref: '#/spec/panels/1' }, height: 5, width: 8, x: 8, y: 0 }
-          - { content: { $ref: '#/spec/panels/2' }, height: 5, width: 8, x: 16, y: 0 }
-    - kind: Grid
-      spec:
-        display: { collapse: { open: true }, title: "Error Rate by Service" }
-        items:
-          - { content: { $ref: '#/spec/panels/3' }, height: 8, width: 12, x: 0, y: 0 }
-          - { content: { $ref: '#/spec/panels/4' }, height: 8, width: 12, x: 12, y: 0 }
-    - kind: Grid
-      spec:
-        display: { collapse: { open: true }, title: "Latency Impact" }
-        items:
-          - { content: { $ref: '#/spec/panels/5' }, height: 8, width: 12, x: 0, y: 0 }
-          - { content: { $ref: '#/spec/panels/6' }, height: 8, width: 12, x: 12, y: 0 }
-    - kind: Grid
-      spec:
-        display: { collapse: { open: true }, title: "Kafka-Specific Operations" }
-        items:
-          - { content: { $ref: '#/spec/panels/7' }, height: 8, width: 12, x: 0, y: 0 }
-          - { content: { $ref: '#/spec/panels/8' }, height: 8, width: 12, x: 12, y: 0 }
-    - kind: Grid
-      spec:
-        display: { collapse: { open: true }, title: "Error Logs" }
-        items:
-          - { content: { $ref: '#/spec/panels/9' }, height: 8, width: 12, x: 0, y: 0 }
-          - { content: { $ref: '#/spec/panels/10' }, height: 8, width: 12, x: 12, y: 0 }
-    - kind: Grid
-      spec:
-        display: { collapse: { open: true }, title: "Downstream Impact" }
-        items:
-          - { content: { $ref: '#/spec/panels/11' }, height: 8, width: 12, x: 0, y: 0 }
-          - { content: { $ref: '#/spec/panels/12' }, height: 8, width: 12, x: 12, y: 0 }
-    - kind: Grid
-      spec:
-        display: { collapse: { open: true }, title: "Error Breakdown" }
-        items:
-          - { content: { $ref: '#/spec/panels/13' }, height: 10, width: 24, x: 0, y: 0 }
+  - kind: Grid
+    spec:
+      display:
+        collapse:
+          open: true
+        title: Error Impact Overview
+      items:
+      - content:
+          $ref: '#/spec/panels/total-error-spans-30m'
+        height: 5
+        width: 8
+        x: 0
+        y: 0
+      - content:
+          $ref: '#/spec/panels/services-with-errors'
+        height: 5
+        width: 8
+        x: 8
+        y: 0
+      - content:
+          $ref: '#/spec/panels/overall-error-rate'
+        height: 5
+        width: 8
+        x: 16
+        y: 0
+  - kind: Grid
+    spec:
+      display:
+        collapse:
+          open: true
+        title: Error Rate by Service
+      items:
+      - content:
+          $ref: '#/spec/panels/error-rate-by-service'
+        height: 8
+        width: 12
+        x: 0
+        y: 0
+      - content:
+          $ref: '#/spec/panels/error-span-rate-by-service-absolute'
+        height: 8
+        width: 12
+        x: 12
+        y: 0
+  - kind: Grid
+    spec:
+      display:
+        collapse:
+          open: true
+        title: Latency Impact
+      items:
+      - content:
+          $ref: '#/spec/panels/p50-span-duration-by-service-ms'
+        height: 8
+        width: 12
+        x: 0
+        y: 0
+      - content:
+          $ref: '#/spec/panels/avg-span-duration-kafka-adjacent-ms'
+        height: 8
+        width: 12
+        x: 12
+        y: 0
+  - kind: Grid
+    spec:
+      display:
+        collapse:
+          open: true
+        title: Kafka-Specific Operations
+      items:
+      - content:
+          $ref: '#/spec/panels/kafka-operation-span-rate'
+        height: 8
+        width: 12
+        x: 0
+        y: 0
+      - content:
+          $ref: '#/spec/panels/kafka-operation-error-rate'
+        height: 8
+        width: 12
+        x: 12
+        y: 0
+  - kind: Grid
+    spec:
+      display:
+        collapse:
+          open: true
+        title: Error Logs
+      items:
+      - content:
+          $ref: '#/spec/panels/error-logs-by-service'
+        height: 8
+        width: 12
+        x: 0
+        y: 0
+      - content:
+          $ref: '#/spec/panels/warning-error-log-volume-kafka-adjacent'
+        height: 8
+        width: 12
+        x: 12
+        y: 0
+  - kind: Grid
+    spec:
+      display:
+        collapse:
+          open: true
+        title: Downstream Impact
+      items:
+      - content:
+          $ref: '#/spec/panels/downstream-throughput-impact'
+        height: 8
+        width: 12
+        x: 0
+        y: 0
+      - content:
+          $ref: '#/spec/panels/downstream-error-rate'
+        height: 8
+        width: 12
+        x: 12
+        y: 0
+  - kind: Grid
+    spec:
+      display:
+        collapse:
+          open: true
+        title: Error Breakdown
+      items:
+      - content:
+          $ref: '#/spec/panels/error-breakdown-service-x-operation-top-20'
+        height: 10
+        width: 24
+        x: 0
+        y: 0
   panels:
-    - kind: Panel
+    total-error-spans-30m:
+      kind: Panel
       spec:
-        display: { name: "Total Error Spans (30m)" }
-        plugin: { kind: StatChart, spec: { calculation: last-number, format: { shortValues: true, unit: decimal }, thresholds: { steps: [{ color: '#7dc540', value: 0 }, { color: '#f5d30f', value: 10 }, { color: '#dc172a', value: 100 }] } } }
+        display:
+          name: Total Error Spans (30m)
+        plugin:
+          kind: StatChart
+          spec:
+            calculation: last-number
+            format:
+              shortValues: true
+              unit: decimal
+            thresholds:
+              steps:
+              - color: '#7dc540'
+                value: 0
+              - color: '#f5d30f'
+                value: 10
+              - color: '#dc172a'
+                value: 100
         queries:
-          - kind: TimeSeriesQuery
-            spec: { plugin: { kind: PrometheusTimeSeriesQuery, spec: { query: 'sum(increase({otel_metric_name="dash0.spans", otel_span_status_code="ERROR"}[30m]))', seriesNameFormat: 'Error Spans' } } }
-    - kind: Panel
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: sum(increase({otel_metric_name="dash0.spans", otel_span_status_code="ERROR"}[30m]))
+                seriesNameFormat: Error Spans
+    services-with-errors:
+      kind: Panel
       spec:
-        display: { name: "Services with Errors" }
-        plugin: { kind: StatChart, spec: { calculation: last-number, format: { shortValues: true, unit: decimal }, thresholds: { steps: [{ color: '#7dc540', value: 0 }, { color: '#f5d30f', value: 2 }, { color: '#dc172a', value: 5 }] } } }
+        display:
+          name: Services with Errors
+        plugin:
+          kind: StatChart
+          spec:
+            calculation: last-number
+            format:
+              shortValues: true
+              unit: decimal
+            thresholds:
+              steps:
+              - color: '#7dc540'
+                value: 0
+              - color: '#f5d30f'
+                value: 2
+              - color: '#dc172a'
+                value: 5
         queries:
-          - kind: TimeSeriesQuery
-            spec: { plugin: { kind: PrometheusTimeSeriesQuery, spec: { query: 'count(count by (service_name) (rate({otel_metric_name="dash0.spans", otel_span_status_code="ERROR"}[$__rate_interval]) > 0))', seriesNameFormat: 'Affected Services' } } }
-    - kind: Panel
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: count(count by (service_name) (rate({otel_metric_name="dash0.spans", otel_span_status_code="ERROR"}[$__rate_interval]) > 0))
+                seriesNameFormat: Affected Services
+    overall-error-rate:
+      kind: Panel
       spec:
-        display: { name: "Overall Error Rate (%)" }
-        plugin: { kind: StatChart, spec: { calculation: last-number, format: { decimalPlaces: 2, unit: percent }, thresholds: { steps: [{ color: '#7dc540', value: 0 }, { color: '#f5d30f', value: 5 }, { color: '#dc172a', value: 15 }] } } }
+        display:
+          name: Overall Error Rate (%)
+        plugin:
+          kind: StatChart
+          spec:
+            calculation: last-number
+            format:
+              decimalPlaces: 2
+              unit: percent
+            thresholds:
+              steps:
+              - color: '#7dc540'
+                value: 0
+              - color: '#f5d30f'
+                value: 5
+              - color: '#dc172a'
+                value: 15
         queries:
-          - kind: TimeSeriesQuery
-            spec: { plugin: { kind: PrometheusTimeSeriesQuery, spec: { query: 'sum(rate({otel_metric_name="dash0.spans", otel_span_status_code="ERROR"}[$__rate_interval])) / clamp_min(sum(rate({otel_metric_name="dash0.spans"}[$__rate_interval])), 1e-10) * 100', seriesNameFormat: 'Error %' } } }
-    - kind: Panel
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: sum(rate({otel_metric_name="dash0.spans", otel_span_status_code="ERROR"}[$__rate_interval])) / clamp_min(sum(rate({otel_metric_name="dash0.spans"}[$__rate_interval])), 1e-10) * 100
+                seriesNameFormat: Error %
+    error-rate-by-service:
+      kind: Panel
       spec:
-        display: { name: "Error Rate by Service (%)" }
-        plugin: { kind: TimeSeriesChart, spec: { legend: { position: right }, yAxis: { label: "Error Rate (%)" } } }
+        display:
+          name: Error Rate by Service (%)
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              position: right
+            yAxis:
+              label: Error Rate (%)
         queries:
-          - kind: TimeSeriesQuery
-            spec: { plugin: { kind: PrometheusTimeSeriesQuery, spec: { query: 'topk(10, sum by (service_name) (rate({otel_metric_name="dash0.spans", otel_span_status_code="ERROR"}[$__rate_interval])) / clamp_min(sum by (service_name) (rate({otel_metric_name="dash0.spans"}[$__rate_interval])), 1e-10) * 100)', seriesNameFormat: '{{service_name}}' } } }
-    - kind: Panel
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: topk(10, sum by (service_name) (rate({otel_metric_name="dash0.spans", otel_span_status_code="ERROR"}[$__rate_interval])) / clamp_min(sum by (service_name) (rate({otel_metric_name="dash0.spans"}[$__rate_interval])),
+                  1e-10) * 100)
+                seriesNameFormat: '{{service_name}}'
+    error-span-rate-by-service-absolute:
+      kind: Panel
       spec:
-        display: { name: "Error Span Rate by Service (absolute)" }
-        plugin: { kind: TimeSeriesChart, spec: { legend: { position: right }, yAxis: { label: "Error Spans/sec" } } }
+        display:
+          name: Error Span Rate by Service (absolute)
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              position: right
+            yAxis:
+              label: Error Spans/sec
         queries:
-          - kind: TimeSeriesQuery
-            spec: { plugin: { kind: PrometheusTimeSeriesQuery, spec: { query: 'topk(10, sum by (service_name) (rate({otel_metric_name="dash0.spans", otel_span_status_code="ERROR"}[$__rate_interval])))', seriesNameFormat: '{{service_name}}' } } }
-    - kind: Panel
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: topk(10, sum by (service_name) (rate({otel_metric_name="dash0.spans", otel_span_status_code="ERROR"}[$__rate_interval])))
+                seriesNameFormat: '{{service_name}}'
+    p50-span-duration-by-service-ms:
+      kind: Panel
       spec:
-        display: { name: "P50 Span Duration by Service (ms)" }
-        plugin: { kind: TimeSeriesChart, spec: { legend: { position: right }, yAxis: { label: "Median Duration (ms)" } } }
+        display:
+          name: P50 Span Duration by Service (ms)
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              position: right
+            yAxis:
+              label: Median Duration (ms)
         queries:
-          - kind: TimeSeriesQuery
-            spec: { plugin: { kind: PrometheusTimeSeriesQuery, spec: { query: 'topk(10, histogram_quantile(0.50, sum by (service_name, le) (rate(dash0_spans_duration_bucket[$__rate_interval]))) * 1000)', seriesNameFormat: '{{service_name}}' } } }
-    - kind: Panel
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: topk(10, histogram_quantile(0.50, sum by (service_name, le) (rate(dash0_spans_duration_bucket[$__rate_interval]))) * 1000)
+                seriesNameFormat: '{{service_name}}'
+    avg-span-duration-kafka-adjacent-ms:
+      kind: Panel
       spec:
-        display: { name: "Avg Span Duration by Kafka-Adjacent Services (ms)" }
-        plugin: { kind: TimeSeriesChart, spec: { legend: { position: right }, yAxis: { label: "Avg Duration (ms)" } } }
+        display:
+          name: Avg Span Duration Kafka-Adjacent (ms)
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              position: right
+            yAxis:
+              label: Avg Duration (ms)
         queries:
-          - kind: TimeSeriesQuery
-            spec: { plugin: { kind: PrometheusTimeSeriesQuery, spec: { query: 'topk(10, sum by (service_name) (rate({otel_metric_name="dash0.spans.duration_sum"}[$__rate_interval])) / clamp_min(sum by (service_name) (rate({otel_metric_name="dash0.spans.duration_count"}[$__rate_interval])), 1e-10) * 1000)', seriesNameFormat: 'avg: {{service_name}}' } } }
-          - kind: TimeSeriesQuery
-            spec: { plugin: { kind: PrometheusTimeSeriesQuery, spec: { query: 'histogram_quantile(0.99, sum by (service_name, le) (rate(dash0_spans_duration_bucket{service_name=~"accounting|checkout|payment|fraud-detection|notification|order|kafka|ad|flagd|inventory"}[$__rate_interval]))) * 1000', seriesNameFormat: 'p99: {{service_name}}' } } }
-    - kind: Panel
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: topk(10, sum by (service_name) (rate({otel_metric_name="dash0.spans.duration_sum"}[$__rate_interval])) / clamp_min(sum by (service_name) (rate({otel_metric_name="dash0.spans.duration_count"}[$__rate_interval])),
+                  1e-10) * 1000)
+                seriesNameFormat: 'avg: {{service_name}}'
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: histogram_quantile(0.99, sum by (service_name, le) (rate(dash0_spans_duration_bucket{service_name=~"accounting|checkout|payment|fraud-detection|notification|order|kafka|ad|flagd|inventory"}[$__rate_interval])))
+                  * 1000
+                seriesNameFormat: 'p99: {{service_name}}'
+    kafka-operation-span-rate:
+      kind: Panel
       spec:
-        display: { name: "Kafka Operation Span Rate" }
-        plugin: { kind: TimeSeriesChart, spec: { legend: { position: right }, yAxis: { label: Spans/sec } } }
+        display:
+          name: Kafka Operation Span Rate
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              position: right
+            yAxis:
+              label: Spans/sec
         queries:
-          - kind: TimeSeriesQuery
-            spec: { plugin: { kind: PrometheusTimeSeriesQuery, spec: { query: 'sum by (dash0_operation_name) (rate({otel_metric_name="dash0.spans", dash0_operation_name=~".*send.*|.*receive.*|.*process.*|.*publish.*|.*produce.*|.*consume.*|.*kafka.*|.*orders.*|.*oteldemo.*"}[$__rate_interval]))', seriesNameFormat: '{{dash0_operation_name}}' } } }
-    - kind: Panel
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: sum by (dash0_operation_name) (rate({otel_metric_name="dash0.spans", dash0_operation_name=~".*send.*|.*receive.*|.*process.*|.*publish.*|.*produce.*|.*consume.*|.*kafka.*|.*orders.*|.*oteldemo.*"}[$__rate_interval]))
+                seriesNameFormat: '{{dash0_operation_name}}'
+    kafka-operation-error-rate:
+      kind: Panel
       spec:
-        display: { name: "Kafka Operation Error Rate" }
-        plugin: { kind: TimeSeriesChart, spec: { legend: { position: right }, yAxis: { label: "Error Spans/sec" } } }
+        display:
+          name: Kafka Operation Error Rate
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              position: right
+            yAxis:
+              label: Error Spans/sec
         queries:
-          - kind: TimeSeriesQuery
-            spec: { plugin: { kind: PrometheusTimeSeriesQuery, spec: { query: 'sum by (dash0_operation_name) (rate({otel_metric_name="dash0.spans", otel_span_status_code="ERROR", dash0_operation_name=~".*send.*|.*receive.*|.*process.*|.*publish.*|.*produce.*|.*consume.*|.*kafka.*|.*orders.*|.*oteldemo.*"}[$__rate_interval]))', seriesNameFormat: '{{dash0_operation_name}}' } } }
-    - kind: Panel
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: sum by (dash0_operation_name) (rate({otel_metric_name="dash0.spans", otel_span_status_code="ERROR", dash0_operation_name=~".*send.*|.*receive.*|.*process.*|.*publish.*|.*produce.*|.*consume.*|.*kafka.*|.*orders.*|.*oteldemo.*"}[$__rate_interval]))
+                seriesNameFormat: '{{dash0_operation_name}}'
+    error-logs-by-service:
+      kind: Panel
       spec:
-        display: { name: "Error Logs by Service" }
-        plugin: { kind: TimeSeriesChart, spec: { legend: { position: right }, yAxis: { label: "Error Logs/sec" } } }
+        display:
+          name: Error Logs by Service
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              position: right
+            yAxis:
+              label: Error Logs/sec
         queries:
-          - kind: TimeSeriesQuery
-            spec: { plugin: { kind: PrometheusTimeSeriesQuery, spec: { query: 'topk(10, sum by (service_name) (rate({otel_metric_name="dash0.logs", otel_log_severity_range=~"ERROR|FATAL"}[$__rate_interval])))', seriesNameFormat: '{{service_name}}' } } }
-    - kind: Panel
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: topk(10, sum by (service_name) (rate({otel_metric_name="dash0.logs", otel_log_severity_range=~"ERROR|FATAL"}[$__rate_interval])))
+                seriesNameFormat: '{{service_name}}'
+    warning-error-log-volume-kafka-adjacent:
+      kind: Panel
       spec:
-        display: { name: "Warning + Error Log Volume (Kafka-Adjacent)" }
-        plugin: { kind: TimeSeriesChart, spec: { legend: { position: right }, yAxis: { label: Logs/sec } } }
+        display:
+          name: Warning Error Log Volume Kafka-Adjacent
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              position: right
+            yAxis:
+              label: Logs/sec
         queries:
-          - kind: TimeSeriesQuery
-            spec: { plugin: { kind: PrometheusTimeSeriesQuery, spec: { query: 'sum by (service_name) (rate({otel_metric_name="dash0.logs", otel_log_severity_range=~"WARN|ERROR|FATAL", service_name=~"accounting|checkout|payment|fraud-detection|notification|order|kafka|ad|flagd|inventory"}[$__rate_interval]))', seriesNameFormat: '{{service_name}}' } } }
-    - kind: Panel
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: sum by (service_name) (rate({otel_metric_name="dash0.logs", otel_log_severity_range=~"WARN|ERROR|FATAL", service_name=~"accounting|checkout|payment|fraud-detection|notification|order|kafka|ad|flagd|inventory"}[$__rate_interval]))
+                seriesNameFormat: '{{service_name}}'
+    downstream-throughput-impact:
+      kind: Panel
       spec:
-        display: { name: "Downstream Throughput Impact" }
-        plugin: { kind: TimeSeriesChart, spec: { legend: { position: right }, yAxis: { label: Requests/sec } } }
+        display:
+          name: Downstream Throughput Impact
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              position: right
+            yAxis:
+              label: Requests/sec
         queries:
-          - kind: TimeSeriesQuery
-            spec: { plugin: { kind: PrometheusTimeSeriesQuery, spec: { query: 'sum by (service_name) (rate({otel_metric_name="dash0.spans", service_name=~"order|checkout|payment|accounting|fraud-detection|notification|recommendation|email|shipping"}[$__rate_interval]))', seriesNameFormat: '{{service_name}}' } } }
-    - kind: Panel
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: sum by (service_name) (rate({otel_metric_name="dash0.spans", service_name=~"order|checkout|payment|accounting|fraud-detection|notification|recommendation|email|shipping"}[$__rate_interval]))
+                seriesNameFormat: '{{service_name}}'
+    downstream-error-rate:
+      kind: Panel
       spec:
-        display: { name: "Downstream Error Rate (%)" }
-        plugin: { kind: TimeSeriesChart, spec: { legend: { position: right }, yAxis: { label: "Error %" } } }
+        display:
+          name: Downstream Error Rate (%)
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              position: right
+            yAxis:
+              label: Error %
         queries:
-          - kind: TimeSeriesQuery
-            spec: { plugin: { kind: PrometheusTimeSeriesQuery, spec: { query: 'sum by (service_name) (rate({otel_metric_name="dash0.spans", otel_span_status_code="ERROR", service_name=~"order|checkout|payment|accounting|fraud-detection|notification|recommendation|email|shipping"}[$__rate_interval])) / clamp_min(sum by (service_name) (rate({otel_metric_name="dash0.spans", service_name=~"order|checkout|payment|accounting|fraud-detection|notification|recommendation|email|shipping"}[$__rate_interval])), 1e-10) * 100', seriesNameFormat: '{{service_name}}' } } }
-    - kind: Panel
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: sum by (service_name) (rate({otel_metric_name="dash0.spans", otel_span_status_code="ERROR", service_name=~"order|checkout|payment|accounting|fraud-detection|notification|recommendation|email|shipping"}[$__rate_interval]))
+                  / clamp_min(sum by (service_name) (rate({otel_metric_name="dash0.spans", service_name=~"order|checkout|payment|accounting|fraud-detection|notification|recommendation|email|shipping"}[$__rate_interval])),
+                  1e-10) * 100
+                seriesNameFormat: '{{service_name}}'
+    error-breakdown-service-x-operation-top-20:
+      kind: Panel
       spec:
-        display: { name: "Error Breakdown: Service x Operation (Top 20)" }
-        plugin: { kind: TimeSeriesTable, spec: { format: { decimalPlaces: 4, shortValues: false, unit: decimal } } }
+        display:
+          name: Error Breakdown Service x Operation Top 20
+        plugin:
+          kind: TimeSeriesTable
+          spec:
+            format:
+              decimalPlaces: 4
+              shortValues: false
+              unit: decimal
         queries:
-          - kind: TimeSeriesQuery
-            spec: { plugin: { kind: PrometheusTimeSeriesQuery, spec: { query: 'topk(20, sum by (service_name, dash0_operation_name) (rate({otel_metric_name="dash0.spans", otel_span_status_code="ERROR"}[$__rate_interval])))', seriesNameFormat: '{{service_name}} -> {{dash0_operation_name}}' } } }
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: topk(20, sum by (service_name, dash0_operation_name) (rate({otel_metric_name="dash0.spans", otel_span_status_code="ERROR"}[$__rate_interval])))
+                seriesNameFormat: '{{service_name}} -> {{dash0_operation_name}}'
   variables: []

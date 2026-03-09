@@ -7,6 +7,8 @@ metadata:
     app.kubernetes.io/managed-by: dash0-operator
     dash0.com/origin: api-898f52b9-449f-40b4-8ca7-659ceea37cc6
 spec:
+  display:
+    name: ''
   enabled: false
   plugin:
     kind: http
@@ -15,9 +17,19 @@ spec:
         method: get
         redirects: follow
         url: https://httpbin.org/status/200
+        headers: {}
+        queryParameters: {}
+        tls: {}
+        tracing: {}
+  assertions: {}
+  notifications:
+    channels: []
+  retries:
+    kind: none
+    spec: {}
   schedule:
     interval: 10m
     locations:
-      - de-frankfurt
-      - uk-london
+    - de-frankfurt
+    - uk-london
     strategy: all_locations

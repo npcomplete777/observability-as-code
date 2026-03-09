@@ -11,52 +11,53 @@ spec:
     name: Kafka Orders & Consumer
   duration: 1h
   layouts:
-    - kind: Grid
-      spec:
-        display:
-          collapse:
-            open: true
-          title: Order Logs
-        items:
-          - content:
-              $ref: '#/spec/panels/0'
-            height: 8
-            width: 24
-            x: 0
-            y: 0
-          - content:
-              $ref: '#/spec/panels/1'
-            height: 8
-            width: 12
-            x: 0
-            y: 8
-          - content:
-              $ref: '#/spec/panels/2'
-            height: 8
-            width: 12
-            x: 12
-            y: 8
-    - kind: Grid
-      spec:
-        display:
-          collapse:
-            open: true
-          title: Consumer Metrics
-        items:
-          - content:
-              $ref: '#/spec/panels/3'
-            height: 8
-            width: 12
-            x: 0
-            y: 0
-          - content:
-              $ref: '#/spec/panels/4'
-            height: 8
-            width: 12
-            x: 12
-            y: 0
+  - kind: Grid
+    spec:
+      display:
+        collapse:
+          open: true
+        title: Order Logs
+      items:
+      - content:
+          $ref: '#/spec/panels/order-log-volume-by-service'
+        height: 8
+        width: 24
+        x: 0
+        y: 0
+      - content:
+          $ref: '#/spec/panels/consumer-records-consumed-rate'
+        height: 8
+        width: 12
+        x: 0
+        y: 8
+      - content:
+          $ref: '#/spec/panels/consumer-lag-max'
+        height: 8
+        width: 12
+        x: 12
+        y: 8
+  - kind: Grid
+    spec:
+      display:
+        collapse:
+          open: true
+        title: Consumer Metrics
+      items:
+      - content:
+          $ref: '#/spec/panels/consumer-fetch-latency'
+        height: 8
+        width: 12
+        x: 0
+        y: 0
+      - content:
+          $ref: '#/spec/panels/recent-kafka-order-log-messages'
+        height: 8
+        width: 12
+        x: 12
+        y: 0
   panels:
-    - kind: Panel
+    order-log-volume-by-service:
+      kind: Panel
       spec:
         display:
           name: Order Log Volume by Service
@@ -71,14 +72,15 @@ spec:
             yAxis:
               label: Logs/sec
         queries:
-          - kind: TimeSeriesQuery
-            spec:
-              plugin:
-                kind: PrometheusTimeSeriesQuery
-                spec:
-                  query: 'sum by (service_name) (rate({otel_metric_name="dash0.logs", service_name=~"kafka|fraud-detection|order.*"}[$__rate_interval]))'
-                  seriesNameFormat: '{{service_name}}'
-    - kind: Panel
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: sum by (service_name) (rate({otel_metric_name="dash0.logs", service_name=~"kafka|fraud-detection|order.*"}[$__rate_interval]))
+                seriesNameFormat: '{{service_name}}'
+    consumer-records-consumed-rate:
+      kind: Panel
       spec:
         display:
           name: Consumer Records Consumed Rate
@@ -90,14 +92,15 @@ spec:
             yAxis:
               label: Records/sec
         queries:
-          - kind: TimeSeriesQuery
-            spec:
-              plugin:
-                kind: PrometheusTimeSeriesQuery
-                spec:
-                  query: avg by (service_name) (kafka_consumer_records_consumed_rate)
-                  seriesNameFormat: '{{service_name}}'
-    - kind: Panel
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: avg by (service_name) (kafka_consumer_records_consumed_rate)
+                seriesNameFormat: '{{service_name}}'
+    consumer-lag-max:
+      kind: Panel
       spec:
         display:
           name: Consumer Lag (Max)
@@ -112,14 +115,15 @@ spec:
             yAxis:
               label: Records
         queries:
-          - kind: TimeSeriesQuery
-            spec:
-              plugin:
-                kind: PrometheusTimeSeriesQuery
-                spec:
-                  query: max by (service_name) (kafka_consumer_records_lag_max)
-                  seriesNameFormat: '{{service_name}}'
-    - kind: Panel
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: max by (service_name) (kafka_consumer_records_lag_max)
+                seriesNameFormat: '{{service_name}}'
+    consumer-fetch-latency:
+      kind: Panel
       spec:
         display:
           name: Consumer Fetch Latency
@@ -131,21 +135,22 @@ spec:
             yAxis:
               label: Latency (ms)
         queries:
-          - kind: TimeSeriesQuery
-            spec:
-              plugin:
-                kind: PrometheusTimeSeriesQuery
-                spec:
-                  query: avg by (service_name) (kafka_consumer_fetch_latency_avg)
-                  seriesNameFormat: 'Avg - {{service_name}}'
-          - kind: TimeSeriesQuery
-            spec:
-              plugin:
-                kind: PrometheusTimeSeriesQuery
-                spec:
-                  query: max by (service_name) (kafka_consumer_fetch_latency_max)
-                  seriesNameFormat: 'Max - {{service_name}}'
-    - kind: Panel
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: avg by (service_name) (kafka_consumer_fetch_latency_avg)
+                seriesNameFormat: Avg - {{service_name}}
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: max by (service_name) (kafka_consumer_fetch_latency_max)
+                seriesNameFormat: Max - {{service_name}}
+    recent-kafka-order-log-messages:
+      kind: Panel
       spec:
         display:
           name: Recent Kafka & Order Log Messages
@@ -157,11 +162,11 @@ spec:
               shortValues: true
               unit: decimal
         queries:
-          - kind: TimeSeriesQuery
-            spec:
-              plugin:
-                kind: PrometheusTimeSeriesQuery
-                spec:
-                  query: 'sum by (service_name, otel_log_severity_range) (rate({otel_metric_name="dash0.logs", service_name=~"kafka|fraud-detection|order.*"}[$__rate_interval]))'
-                  seriesNameFormat: '{{service_name}} [{{otel_log_severity_range}}]'
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: sum by (service_name, otel_log_severity_range) (rate({otel_metric_name="dash0.logs", service_name=~"kafka|fraud-detection|order.*"}[$__rate_interval]))
+                seriesNameFormat: '{{service_name}} [{{otel_log_severity_range}}]'
   variables: []

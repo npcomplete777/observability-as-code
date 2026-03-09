@@ -11,115 +11,334 @@ spec:
     name: Kafka Orders & Consumer (Full Pipeline)
   duration: 1h
   layouts:
-    - kind: Grid
-      spec:
-        display: { collapse: { open: true }, title: "Log & Span Overview" }
-        items:
-          - { content: { $ref: '#/spec/panels/0' }, height: 8, width: 12, x: 0, y: 0 }
-          - { content: { $ref: '#/spec/panels/1' }, height: 8, width: 12, x: 12, y: 0 }
-    - kind: Grid
-      spec:
-        display: { collapse: { open: true }, title: "Consumer Metrics" }
-        items:
-          - { content: { $ref: '#/spec/panels/2' }, height: 8, width: 12, x: 0, y: 0 }
-          - { content: { $ref: '#/spec/panels/3' }, height: 8, width: 12, x: 12, y: 0 }
-    - kind: Grid
-      spec:
-        display: { collapse: { open: true }, title: "Broker Metrics" }
-        items:
-          - { content: { $ref: '#/spec/panels/4' }, height: 8, width: 12, x: 0, y: 0 }
-          - { content: { $ref: '#/spec/panels/5' }, height: 8, width: 12, x: 12, y: 0 }
-    - kind: Grid
-      spec:
-        display: { collapse: { open: true }, title: "Consumer Throughput" }
-        items:
-          - { content: { $ref: '#/spec/panels/6' }, height: 8, width: 24, x: 0, y: 0 }
-    - kind: Grid
-      spec:
-        display: { collapse: { open: true }, title: "Pipeline Health" }
-        items:
-          - { content: { $ref: '#/spec/panels/7' }, height: 8, width: 12, x: 0, y: 0 }
-          - { content: { $ref: '#/spec/panels/8' }, height: 8, width: 12, x: 12, y: 0 }
-    - kind: Grid
-      spec:
-        display: { collapse: { open: true }, title: "Log Messages" }
-        items:
-          - { content: { $ref: '#/spec/panels/9' }, height: 10, width: 24, x: 0, y: 0 }
+  - kind: Grid
+    spec:
+      display:
+        collapse:
+          open: true
+        title: Log & Span Overview
+      items:
+      - content:
+          $ref: '#/spec/panels/order-kafka-log-volume-by-service'
+        height: 8
+        width: 12
+        x: 0
+        y: 0
+      - content:
+          $ref: '#/spec/panels/consumer-records-consumed-rate'
+        height: 8
+        width: 12
+        x: 12
+        y: 0
+  - kind: Grid
+    spec:
+      display:
+        collapse:
+          open: true
+        title: Consumer Metrics
+      items:
+      - content:
+          $ref: '#/spec/panels/consumer-lag-max'
+        height: 8
+        width: 12
+        x: 0
+        y: 0
+      - content:
+          $ref: '#/spec/panels/consumer-fetch-latency'
+        height: 8
+        width: 12
+        x: 12
+        y: 0
+  - kind: Grid
+    spec:
+      display:
+        collapse:
+          open: true
+        title: Broker Metrics
+      items:
+      - content:
+          $ref: '#/spec/panels/broker-partitions-message-count'
+        height: 8
+        width: 12
+        x: 0
+        y: 0
+      - content:
+          $ref: '#/spec/panels/broker-request-latency-p50-p99'
+        height: 8
+        width: 12
+        x: 12
+        y: 0
+  - kind: Grid
+    spec:
+      display:
+        collapse:
+          open: true
+        title: Consumer Throughput
+      items:
+      - content:
+          $ref: '#/spec/panels/consumer-bytes-consumed-rate-by-service'
+        height: 8
+        width: 24
+        x: 0
+        y: 0
+  - kind: Grid
+    spec:
+      display:
+        collapse:
+          open: true
+        title: Pipeline Health
+      items:
+      - content:
+          $ref: '#/spec/panels/order-pipeline-error-rate'
+        height: 8
+        width: 12
+        x: 0
+        y: 0
+      - content:
+          $ref: '#/spec/panels/kafka-feature-flag-activity'
+        height: 8
+        width: 12
+        x: 12
+        y: 0
+  - kind: Grid
+    spec:
+      display:
+        collapse:
+          open: true
+        title: Log Messages
+      items:
+      - content:
+          $ref: '#/spec/panels/recent-kafka-order-log-messages'
+        height: 10
+        width: 24
+        x: 0
+        y: 0
   panels:
-    - kind: Panel
+    order-kafka-log-volume-by-service:
+      kind: Panel
       spec:
-        display: { name: "Order & Kafka Log Volume by Service" }
-        plugin: { kind: TimeSeriesChart, spec: { legend: { position: right }, visual: { areaOpacity: 0.5, display: line } } }
+        display:
+          name: Order & Kafka Log Volume by Service
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              position: right
+            visual:
+              areaOpacity: 0.5
+              display: line
         queries:
-          - kind: TimeSeriesQuery
-            spec: { plugin: { kind: PrometheusTimeSeriesQuery, spec: { query: 'sum by (service_name) (rate({otel_metric_name="dash0.logs", service_name=~"kafka|fraud-detection|order|checkout"}[$__rate_interval]))', seriesNameFormat: '{{service_name}}' } } }
-    - kind: Panel
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: sum by (service_name) (rate({otel_metric_name="dash0.logs", service_name=~"kafka|fraud-detection|order|checkout"}[$__rate_interval]))
+                seriesNameFormat: '{{service_name}}'
+    consumer-records-consumed-rate:
+      kind: Panel
       spec:
-        display: { name: "Consumer Records Consumed Rate" }
-        plugin: { kind: TimeSeriesChart, spec: { legend: { position: right }, yAxis: { label: Records/sec } } }
+        display:
+          name: Consumer Records Consumed Rate
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              position: right
+            yAxis:
+              label: Records/sec
         queries:
-          - kind: TimeSeriesQuery
-            spec: { plugin: { kind: PrometheusTimeSeriesQuery, spec: { query: 'avg by (service_name) (kafka_consumer_records_consumed_rate)', seriesNameFormat: '{{service_name}}' } } }
-    - kind: Panel
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: avg by (service_name) (kafka_consumer_records_consumed_rate)
+                seriesNameFormat: '{{service_name}}'
+    consumer-lag-max:
+      kind: Panel
       spec:
-        display: { name: "Consumer Lag (Max)" }
-        plugin: { kind: TimeSeriesChart, spec: { legend: { position: right }, visual: { areaOpacity: 0.3, display: line }, yAxis: { label: Records } } }
+        display:
+          name: Consumer Lag (Max)
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              position: right
+            visual:
+              areaOpacity: 0.3
+              display: line
+            yAxis:
+              label: Records
         queries:
-          - kind: TimeSeriesQuery
-            spec: { plugin: { kind: PrometheusTimeSeriesQuery, spec: { query: 'max by (service_name) (kafka_consumer_records_lag_max)', seriesNameFormat: '{{service_name}}' } } }
-    - kind: Panel
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: max by (service_name) (kafka_consumer_records_lag_max)
+                seriesNameFormat: '{{service_name}}'
+    consumer-fetch-latency:
+      kind: Panel
       spec:
-        display: { name: "Consumer Fetch Latency" }
-        plugin: { kind: TimeSeriesChart, spec: { legend: { position: right }, yAxis: { label: "Latency (ms)" } } }
+        display:
+          name: Consumer Fetch Latency
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              position: right
+            yAxis:
+              label: Latency (ms)
         queries:
-          - kind: TimeSeriesQuery
-            spec: { plugin: { kind: PrometheusTimeSeriesQuery, spec: { query: 'avg(kafka_consumer_fetch_latency_avg)', seriesNameFormat: 'Fetch Latency Avg' } } }
-          - kind: TimeSeriesQuery
-            spec: { plugin: { kind: PrometheusTimeSeriesQuery, spec: { query: 'max(kafka_consumer_fetch_latency_max)', seriesNameFormat: 'Fetch Latency Max' } } }
-    - kind: Panel
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: avg(kafka_consumer_fetch_latency_avg)
+                seriesNameFormat: Fetch Latency Avg
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: max(kafka_consumer_fetch_latency_max)
+                seriesNameFormat: Fetch Latency Max
+    broker-partitions-message-count:
+      kind: Panel
       spec:
-        display: { name: "Broker: Partitions & Message Count" }
-        plugin: { kind: TimeSeriesChart, spec: { legend: { position: right } } }
+        display:
+          name: 'Broker: Partitions & Message Count'
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              position: right
         queries:
-          - kind: TimeSeriesQuery
-            spec: { plugin: { kind: PrometheusTimeSeriesQuery, spec: { query: 'last_over_time(kafka_partition_count[5m])', seriesNameFormat: 'Partition Count' } } }
-          - kind: TimeSeriesQuery
-            spec: { plugin: { kind: PrometheusTimeSeriesQuery, spec: { query: 'max(kafka_message_count)', seriesNameFormat: 'Messages In' } } }
-    - kind: Panel
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: last_over_time(kafka_partition_count[5m])
+                seriesNameFormat: Partition Count
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: max(kafka_message_count)
+                seriesNameFormat: Messages In
+    broker-request-latency-p50-p99:
+      kind: Panel
       spec:
-        display: { name: "Broker: Request Latency (p50 / p99)" }
-        plugin: { kind: TimeSeriesChart, spec: { legend: { position: right }, yAxis: { label: ms } } }
+        display:
+          name: 'Broker: Request Latency (p50 / p99)'
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              position: right
+            yAxis:
+              label: ms
         queries:
-          - kind: TimeSeriesQuery
-            spec: { plugin: { kind: PrometheusTimeSeriesQuery, spec: { query: 'avg(kafka_request_time_50p)', seriesNameFormat: 'Request Time p50' } } }
-          - kind: TimeSeriesQuery
-            spec: { plugin: { kind: PrometheusTimeSeriesQuery, spec: { query: 'avg(kafka_request_time_99p)', seriesNameFormat: 'Request Time p99' } } }
-    - kind: Panel
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: avg(kafka_request_time_50p)
+                seriesNameFormat: Request Time p50
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: avg(kafka_request_time_99p)
+                seriesNameFormat: Request Time p99
+    consumer-bytes-consumed-rate-by-service:
+      kind: Panel
       spec:
-        display: { name: "Consumer: Bytes Consumed Rate by Service" }
-        plugin: { kind: TimeSeriesChart, spec: { legend: { position: right }, visual: { areaOpacity: 0.5, display: line }, yAxis: { label: bytes/sec } } }
+        display:
+          name: 'Consumer: Bytes Consumed Rate by Service'
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              position: right
+            visual:
+              areaOpacity: 0.5
+              display: line
+            yAxis:
+              label: bytes/sec
         queries:
-          - kind: TimeSeriesQuery
-            spec: { plugin: { kind: PrometheusTimeSeriesQuery, spec: { query: 'avg by (service_name) (kafka_consumer_bytes_consumed_rate)', seriesNameFormat: '{{service_name}}' } } }
-    - kind: Panel
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: avg by (service_name) (kafka_consumer_bytes_consumed_rate)
+                seriesNameFormat: '{{service_name}}'
+    order-pipeline-error-rate:
+      kind: Panel
       spec:
-        display: { name: "Order Pipeline Error Rate" }
-        plugin: { kind: TimeSeriesChart, spec: { legend: { position: right }, visual: { areaOpacity: 0.5, display: line }, yAxis: { label: "Error Count" } } }
+        display:
+          name: Order Pipeline Error Rate
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              position: right
+            visual:
+              areaOpacity: 0.5
+              display: line
+            yAxis:
+              label: Error Count
         queries:
-          - kind: TimeSeriesQuery
-            spec: { plugin: { kind: PrometheusTimeSeriesQuery, spec: { query: 'sum by (service_name) (rate({otel_metric_name="dash0.spans", otel_span_status_code="ERROR", service_name=~"order|checkout|fraud-detection"}[$__rate_interval]))', seriesNameFormat: '{{service_name}}' } } }
-    - kind: Panel
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: sum by (service_name) (rate({otel_metric_name="dash0.spans", otel_span_status_code="ERROR", service_name=~"order|checkout|fraud-detection"}[$__rate_interval]))
+                seriesNameFormat: '{{service_name}}'
+    kafka-feature-flag-activity:
+      kind: Panel
       spec:
-        display: { name: "Kafka Feature Flag Activity" }
-        plugin: { kind: TimeSeriesChart, spec: { legend: { position: right } } }
+        display:
+          name: Kafka Feature Flag Activity
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              position: right
         queries:
-          - kind: TimeSeriesQuery
-            spec: { plugin: { kind: PrometheusTimeSeriesQuery, spec: { query: 'sum(rate({otel_metric_name="dash0.spans", feature_flag_key="kafkaQueueProblems"}[$__rate_interval]))', seriesNameFormat: 'Flag Events' } } }
-    - kind: Panel
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: sum(rate({otel_metric_name="dash0.spans", feature_flag_key="kafkaQueueProblems"}[$__rate_interval]))
+                seriesNameFormat: Flag Events
+    recent-kafka-order-log-messages:
+      kind: Panel
       spec:
-        display: { name: "Recent Kafka & Order Log Messages" }
-        plugin: { kind: TimeSeriesTable, spec: { format: { decimalPlaces: 0, shortValues: true, unit: decimal } } }
+        display:
+          name: Recent Kafka & Order Log Messages
+        plugin:
+          kind: TimeSeriesTable
+          spec:
+            format:
+              decimalPlaces: 0
+              shortValues: true
+              unit: decimal
         queries:
-          - kind: TimeSeriesQuery
-            spec: { plugin: { kind: PrometheusTimeSeriesQuery, spec: { query: 'sum by (service_name, otel_log_severity_range) (rate({otel_metric_name="dash0.logs", service_name=~"kafka|fraud-detection|order|checkout"}[$__rate_interval]))', seriesNameFormat: '{{service_name}} - {{otel_log_severity_range}}' } } }
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: sum by (service_name, otel_log_severity_range) (rate({otel_metric_name="dash0.logs", service_name=~"kafka|fraud-detection|order|checkout"}[$__rate_interval]))
+                seriesNameFormat: '{{service_name}} - {{otel_log_severity_range}}'
   variables: []

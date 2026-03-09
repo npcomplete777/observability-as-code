@@ -8,49 +8,100 @@ metadata:
     dash0.com/origin: api-6e26f782-1ba8-4b38-9e65-6b5606752f11
 spec:
   display:
-    name: "Ad Service (Java) - GC & Performance Investigation"
+    name: Ad Service (Java) - GC & Performance Investigation
   duration: 1h
   layouts:
-    - kind: Grid
-      spec:
-        display:
-          collapse:
-            open: true
-          title: "Ad Service KPIs"
-        items:
-          - { content: { $ref: '#/spec/panels/0' }, height: 5, width: 6, x: 0, y: 0 }
-          - { content: { $ref: '#/spec/panels/1' }, height: 5, width: 6, x: 6, y: 0 }
-          - { content: { $ref: '#/spec/panels/2' }, height: 5, width: 6, x: 12, y: 0 }
-          - { content: { $ref: '#/spec/panels/3' }, height: 5, width: 6, x: 18, y: 0 }
-    - kind: Grid
-      spec:
-        display:
-          collapse:
-            open: true
-          title: "Ad Service Span Rate & Errors Over Time"
-        items:
-          - { content: { $ref: '#/spec/panels/4' }, height: 8, width: 12, x: 0, y: 0 }
-          - { content: { $ref: '#/spec/panels/5' }, height: 8, width: 12, x: 12, y: 0 }
-    - kind: Grid
-      spec:
-        display:
-          collapse:
-            open: true
-          title: "Ad Service Operations Breakdown"
-        items:
-          - { content: { $ref: '#/spec/panels/6' }, height: 8, width: 12, x: 0, y: 0 }
-          - { content: { $ref: '#/spec/panels/7' }, height: 8, width: 12, x: 12, y: 0 }
-    - kind: Grid
-      spec:
-        display:
-          collapse:
-            open: true
-          title: "Error Logs & Downstream Impact"
-        items:
-          - { content: { $ref: '#/spec/panels/8' }, height: 8, width: 12, x: 0, y: 0 }
-          - { content: { $ref: '#/spec/panels/9' }, height: 8, width: 12, x: 12, y: 0 }
+  - kind: Grid
+    spec:
+      display:
+        collapse:
+          open: true
+        title: Ad Service KPIs
+      items:
+      - content:
+          $ref: '#/spec/panels/ad-service-throughput-spans-sec'
+        height: 5
+        width: 6
+        x: 0
+        y: 0
+      - content:
+          $ref: '#/spec/panels/ad-service-error-rate'
+        height: 5
+        width: 6
+        x: 6
+        y: 0
+      - content:
+          $ref: '#/spec/panels/ad-service-error-spans-30m'
+        height: 5
+        width: 6
+        x: 12
+        y: 0
+      - content:
+          $ref: '#/spec/panels/ad-error-logs-30m'
+        height: 5
+        width: 6
+        x: 18
+        y: 0
+  - kind: Grid
+    spec:
+      display:
+        collapse:
+          open: true
+        title: Ad Service Span Rate & Errors Over Time
+      items:
+      - content:
+          $ref: '#/spec/panels/ad-service-span-rate-over-time'
+        height: 8
+        width: 12
+        x: 0
+        y: 0
+      - content:
+          $ref: '#/spec/panels/ad-service-error-rate-over-time'
+        height: 8
+        width: 12
+        x: 12
+        y: 0
+  - kind: Grid
+    spec:
+      display:
+        collapse:
+          open: true
+        title: Ad Service Operations Breakdown
+      items:
+      - content:
+          $ref: '#/spec/panels/ad-service-operations-by-name'
+        height: 8
+        width: 12
+        x: 0
+        y: 0
+      - content:
+          $ref: '#/spec/panels/ad-service-error-operations'
+        height: 8
+        width: 12
+        x: 12
+        y: 0
+  - kind: Grid
+    spec:
+      display:
+        collapse:
+          open: true
+        title: Error Logs & Downstream Impact
+      items:
+      - content:
+          $ref: '#/spec/panels/ad-service-log-volume-by-severity'
+        height: 8
+        width: 12
+        x: 0
+        y: 0
+      - content:
+          $ref: '#/spec/panels/frontend-impact-depends-on-ads'
+        height: 8
+        width: 12
+        x: 12
+        y: 0
   panels:
-    - kind: Panel
+    ad-service-throughput-spans-sec:
+      kind: Panel
       spec:
         display:
           name: Ad Service Throughput (spans/sec)
@@ -58,16 +109,20 @@ spec:
           kind: StatChart
           spec:
             calculation: last-number
-            format: { decimalPlaces: 2, shortValues: false, unit: decimal }
+            format:
+              decimalPlaces: 2
+              shortValues: false
+              unit: decimal
         queries:
-          - kind: TimeSeriesQuery
-            spec:
-              plugin:
-                kind: PrometheusTimeSeriesQuery
-                spec:
-                  query: 'sum(rate({otel_metric_name="dash0.spans", service_name="ad"}[$__rate_interval]))'
-                  seriesNameFormat: spans/sec
-    - kind: Panel
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: sum(rate({otel_metric_name="dash0.spans", service_name="ad"}[$__rate_interval]))
+                seriesNameFormat: spans/sec
+    ad-service-error-rate:
+      kind: Panel
       spec:
         display:
           name: Ad Service Error Rate (%)
@@ -75,21 +130,28 @@ spec:
           kind: StatChart
           spec:
             calculation: last-number
-            format: { decimalPlaces: 2, unit: percent }
+            format:
+              decimalPlaces: 2
+              unit: percent
             thresholds:
               steps:
-                - { color: '#7dc540', value: 0 }
-                - { color: '#f5d30f', value: 5 }
-                - { color: '#dc172a', value: 20 }
+              - color: '#7dc540'
+                value: 0
+              - color: '#f5d30f'
+                value: 5
+              - color: '#dc172a'
+                value: 20
         queries:
-          - kind: TimeSeriesQuery
-            spec:
-              plugin:
-                kind: PrometheusTimeSeriesQuery
-                spec:
-                  query: 'sum(rate({otel_metric_name="dash0.spans", service_name="ad", otel_span_status_code="ERROR"}[$__rate_interval])) / clamp_min(sum(rate({otel_metric_name="dash0.spans", service_name="ad"}[$__rate_interval])), 1e-10) * 100'
-                  seriesNameFormat: Error %
-    - kind: Panel
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: sum(rate({otel_metric_name="dash0.spans", service_name="ad", otel_span_status_code="ERROR"}[$__rate_interval])) / clamp_min(sum(rate({otel_metric_name="dash0.spans", service_name="ad"}[$__rate_interval])),
+                  1e-10) * 100
+                seriesNameFormat: Error %
+    ad-service-error-spans-30m:
+      kind: Panel
       spec:
         display:
           name: Ad Service Error Spans (30m)
@@ -97,21 +159,27 @@ spec:
           kind: StatChart
           spec:
             calculation: last-number
-            format: { shortValues: true, unit: decimal }
+            format:
+              shortValues: true
+              unit: decimal
             thresholds:
               steps:
-                - { color: '#7dc540', value: 0 }
-                - { color: '#f5d30f', value: 10 }
-                - { color: '#dc172a', value: 100 }
+              - color: '#7dc540'
+                value: 0
+              - color: '#f5d30f'
+                value: 10
+              - color: '#dc172a'
+                value: 100
         queries:
-          - kind: TimeSeriesQuery
-            spec:
-              plugin:
-                kind: PrometheusTimeSeriesQuery
-                spec:
-                  query: 'sum(increase({otel_metric_name="dash0.spans", service_name="ad", otel_span_status_code="ERROR"}[30m]))'
-                  seriesNameFormat: Errors
-    - kind: Panel
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: sum(increase({otel_metric_name="dash0.spans", service_name="ad", otel_span_status_code="ERROR"}[30m]))
+                seriesNameFormat: Errors
+    ad-error-logs-30m:
+      kind: Panel
       spec:
         display:
           name: Ad Error Logs (30m)
@@ -119,141 +187,167 @@ spec:
           kind: StatChart
           spec:
             calculation: last-number
-            format: { shortValues: true, unit: decimal }
+            format:
+              shortValues: true
+              unit: decimal
             thresholds:
               steps:
-                - { color: '#7dc540', value: 0 }
-                - { color: '#f5d30f', value: 5 }
-                - { color: '#dc172a', value: 20 }
+              - color: '#7dc540'
+                value: 0
+              - color: '#f5d30f'
+                value: 5
+              - color: '#dc172a'
+                value: 20
         queries:
-          - kind: TimeSeriesQuery
-            spec:
-              plugin:
-                kind: PrometheusTimeSeriesQuery
-                spec:
-                  query: 'sum(increase({otel_metric_name="dash0.logs", service_name="ad", otel_log_severity_range=~"ERROR|FATAL"}[30m]))'
-                  seriesNameFormat: Error Logs
-    - kind: Panel
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: sum(increase({otel_metric_name="dash0.logs", service_name="ad", otel_log_severity_range=~"ERROR|FATAL"}[30m]))
+                seriesNameFormat: Error Logs
+    ad-service-span-rate-over-time:
+      kind: Panel
       spec:
         display:
           name: Ad Service Span Rate Over Time
         plugin:
           kind: TimeSeriesChart
           spec:
-            legend: { position: right }
-            yAxis: { label: Spans/sec }
+            legend:
+              position: right
+            yAxis:
+              label: Spans/sec
         queries:
-          - kind: TimeSeriesQuery
-            spec:
-              plugin:
-                kind: PrometheusTimeSeriesQuery
-                spec:
-                  query: 'sum(rate({otel_metric_name="dash0.spans", service_name="ad"}[$__rate_interval]))'
-                  seriesNameFormat: Total
-          - kind: TimeSeriesQuery
-            spec:
-              plugin:
-                kind: PrometheusTimeSeriesQuery
-                spec:
-                  query: 'sum(rate({otel_metric_name="dash0.spans", service_name="ad", otel_span_status_code="ERROR"}[$__rate_interval]))'
-                  seriesNameFormat: Errors
-          - kind: TimeSeriesQuery
-            spec:
-              plugin:
-                kind: PrometheusTimeSeriesQuery
-                spec:
-                  query: 'sum(rate({otel_metric_name="dash0.spans", service_name="ad", otel_span_status_code="OK"}[$__rate_interval]))'
-                  seriesNameFormat: OK
-    - kind: Panel
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: sum(rate({otel_metric_name="dash0.spans", service_name="ad"}[$__rate_interval]))
+                seriesNameFormat: Total
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: sum(rate({otel_metric_name="dash0.spans", service_name="ad", otel_span_status_code="ERROR"}[$__rate_interval]))
+                seriesNameFormat: Errors
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: sum(rate({otel_metric_name="dash0.spans", service_name="ad", otel_span_status_code="OK"}[$__rate_interval]))
+                seriesNameFormat: OK
+    ad-service-error-rate-over-time:
+      kind: Panel
       spec:
         display:
           name: Ad Service Error Rate % Over Time
         plugin:
           kind: TimeSeriesChart
           spec:
-            legend: { position: right }
-            yAxis: { label: Error % }
+            legend:
+              position: right
+            yAxis:
+              label: Error %
         queries:
-          - kind: TimeSeriesQuery
-            spec:
-              plugin:
-                kind: PrometheusTimeSeriesQuery
-                spec:
-                  query: 'sum(rate({otel_metric_name="dash0.spans", service_name="ad", otel_span_status_code="ERROR"}[$__rate_interval])) / clamp_min(sum(rate({otel_metric_name="dash0.spans", service_name="ad"}[$__rate_interval])), 1e-10) * 100'
-                  seriesNameFormat: Error Rate %
-    - kind: Panel
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: sum(rate({otel_metric_name="dash0.spans", service_name="ad", otel_span_status_code="ERROR"}[$__rate_interval])) / clamp_min(sum(rate({otel_metric_name="dash0.spans", service_name="ad"}[$__rate_interval])),
+                  1e-10) * 100
+                seriesNameFormat: Error Rate %
+    ad-service-operations-by-name:
+      kind: Panel
       spec:
         display:
           name: Ad Service Operations (by name)
         plugin:
           kind: TimeSeriesChart
           spec:
-            legend: { position: right }
-            yAxis: { label: Spans/sec }
+            legend:
+              position: right
+            yAxis:
+              label: Spans/sec
         queries:
-          - kind: TimeSeriesQuery
-            spec:
-              plugin:
-                kind: PrometheusTimeSeriesQuery
-                spec:
-                  query: 'sum by (dash0_operation_name) (rate({otel_metric_name="dash0.spans", service_name="ad"}[$__rate_interval]))'
-                  seriesNameFormat: '{{dash0_operation_name}}'
-    - kind: Panel
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: sum by (dash0_operation_name) (rate({otel_metric_name="dash0.spans", service_name="ad"}[$__rate_interval]))
+                seriesNameFormat: '{{dash0_operation_name}}'
+    ad-service-error-operations:
+      kind: Panel
       spec:
         display:
           name: Ad Service Error Operations
         plugin:
           kind: TimeSeriesChart
           spec:
-            legend: { position: right }
-            yAxis: { label: Error Spans/sec }
+            legend:
+              position: right
+            yAxis:
+              label: Error Spans/sec
         queries:
-          - kind: TimeSeriesQuery
-            spec:
-              plugin:
-                kind: PrometheusTimeSeriesQuery
-                spec:
-                  query: 'sum by (dash0_operation_name) (rate({otel_metric_name="dash0.spans", service_name="ad", otel_span_status_code="ERROR"}[$__rate_interval]))'
-                  seriesNameFormat: '{{dash0_operation_name}}'
-    - kind: Panel
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: sum by (dash0_operation_name) (rate({otel_metric_name="dash0.spans", service_name="ad", otel_span_status_code="ERROR"}[$__rate_interval]))
+                seriesNameFormat: '{{dash0_operation_name}}'
+    ad-service-log-volume-by-severity:
+      kind: Panel
       spec:
         display:
           name: Ad Service Log Volume by Severity
         plugin:
           kind: TimeSeriesChart
           spec:
-            legend: { position: right }
-            yAxis: { label: Logs/sec }
+            legend:
+              position: right
+            yAxis:
+              label: Logs/sec
         queries:
-          - kind: TimeSeriesQuery
-            spec:
-              plugin:
-                kind: PrometheusTimeSeriesQuery
-                spec:
-                  query: 'sum by (otel_log_severity_range) (rate({otel_metric_name="dash0.logs", service_name="ad"}[$__rate_interval]))'
-                  seriesNameFormat: '{{otel_log_severity_range}}'
-    - kind: Panel
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: sum by (otel_log_severity_range) (rate({otel_metric_name="dash0.logs", service_name="ad"}[$__rate_interval]))
+                seriesNameFormat: '{{otel_log_severity_range}}'
+    frontend-impact-depends-on-ads:
+      kind: Panel
       spec:
         display:
           name: Frontend Impact (depends on ads)
         plugin:
           kind: TimeSeriesChart
           spec:
-            legend: { position: right }
-            yAxis: { label: Error % }
+            legend:
+              position: right
+            yAxis:
+              label: Error %
         queries:
-          - kind: TimeSeriesQuery
-            spec:
-              plugin:
-                kind: PrometheusTimeSeriesQuery
-                spec:
-                  query: 'sum(rate({otel_metric_name="dash0.spans", service_name="frontend", otel_span_status_code="ERROR"}[$__rate_interval])) / clamp_min(sum(rate({otel_metric_name="dash0.spans", service_name="frontend"}[$__rate_interval])), 1e-10) * 100'
-                  seriesNameFormat: frontend error %
-          - kind: TimeSeriesQuery
-            spec:
-              plugin:
-                kind: PrometheusTimeSeriesQuery
-                spec:
-                  query: 'sum(rate({otel_metric_name="dash0.spans", service_name="ad", otel_span_status_code="ERROR"}[$__rate_interval])) / clamp_min(sum(rate({otel_metric_name="dash0.spans", service_name="ad"}[$__rate_interval])), 1e-10) * 100'
-                  seriesNameFormat: ad error %
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: sum(rate({otel_metric_name="dash0.spans", service_name="frontend", otel_span_status_code="ERROR"}[$__rate_interval])) / clamp_min(sum(rate({otel_metric_name="dash0.spans", service_name="frontend"}[$__rate_interval])),
+                  1e-10) * 100
+                seriesNameFormat: frontend error %
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: sum(rate({otel_metric_name="dash0.spans", service_name="ad", otel_span_status_code="ERROR"}[$__rate_interval])) / clamp_min(sum(rate({otel_metric_name="dash0.spans", service_name="ad"}[$__rate_interval])),
+                  1e-10) * 100
+                seriesNameFormat: ad error %
   variables: []
