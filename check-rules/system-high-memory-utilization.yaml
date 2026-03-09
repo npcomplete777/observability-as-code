@@ -1,0 +1,29 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: system-high-memory-utilization
+  namespace: otel-demo
+  labels:
+    app.kubernetes.io/managed-by: dash0-operator
+spec:
+  groups:
+    - name: system-alerts
+      interval: 2m
+      rules:
+        - alert: SystemHighMemoryUtilization
+          expr: >-
+            avg_over_time({otel_metric_name="system.memory.utilization"}[5m]) > 0.90
+          for: 5m
+          labels:
+            severity: warning
+            domain: system
+            component: memory
+            source: kibana-migration
+          annotations:
+            summary: "System memory utilization exceeds 90%"
+            description: >-
+              Migrated from Kibana rule: [System] High Memory Utilization (>90%)
+              (type: .es-query). Original rule checked otel-metrics* for
+              system.memory.utilization >= 0.90 with > 3 hits in 5m window,
+              evaluated every 2m. The Dash0 equivalent queries the
+              system.memory.utilization OTel metric directly via PromQL.
