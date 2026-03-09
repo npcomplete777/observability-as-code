@@ -1,0 +1,35 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: high-service-error-rate
+  namespace: otel-demo
+  labels:
+    app.kubernetes.io/managed-by: dash0-operator
+    dash0.com/origin: api-2cbc1180-3665-48af-bdc3-b8bafd8b5678
+spec:
+  groups:
+    - name: service-error-alerts
+      interval: 1m
+      rules:
+        - alert: HighServiceErrorRate
+          expr: >-
+            sum by (service_name) (
+              rate({otel_metric_name="dash0.spans", otel_span_status_code="ERROR"}[5m])
+            )
+            /
+            clamp_min(
+              sum by (service_name) (
+                rate({otel_metric_name="dash0.spans"}[5m])
+              ), 1e-10
+            ) > 0.1
+          for: 5m
+          labels:
+            severity: critical
+            source: autonomous
+            team: platform
+          annotations:
+            summary: "Service {{ $labels.service_name }} error rate exceeds 10%"
+            description: >-
+              The service {{ $labels.service_name }} has had an error rate above
+              10% for the last 5 minutes. Current value:
+              {{ $value | humanizePercentage }}
