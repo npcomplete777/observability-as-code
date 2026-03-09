@@ -1,22 +1,21 @@
 apiVersion: operator.dash0.com/v1alpha1
 kind: Dash0SyntheticCheck
 metadata:
-  name: mcp-smoke-test-check
+  name: o11y-alchemy-homepage
   namespace: otel-demo
   labels:
     app.kubernetes.io/managed-by: dash0-operator
-    dash0.com/origin: api-898f52b9-449f-40b4-8ca7-659ceea37cc6
 spec:
   display:
     name: ""
-  enabled: false
+  enabled: true
   plugin:
     kind: http
     spec:
       request:
         method: get
         redirects: follow
-        url: https://httpbin.org/status/200
+        url: https://o11y-alchemy.com
         headers: []
         queryParameters: []
         tls:
@@ -32,7 +31,7 @@ spec:
     kind: "off"
     spec: {}
   schedule:
-    interval: 10m
+    interval: 5m
     locations:
       - de-frankfurt
       - uk-london
