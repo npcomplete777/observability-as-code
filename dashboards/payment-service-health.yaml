@@ -1,0 +1,287 @@
+apiVersion: perses.dev/v1alpha1
+kind: PersesDashboard
+metadata:
+  name: payment-service-health
+  namespace: otel-demo
+  labels:
+    app.kubernetes.io/managed-by: dash0-operator
+    dash0.com/origin: api-db781cf1-6192-45e4-b46a-f77e8a009633
+spec:
+  display:
+    name: Payment Service Health (Node.js)
+  duration: 1h
+  layouts:
+  - kind: Grid
+    spec:
+      display:
+        collapse:
+          open: true
+        title: KPIs
+      items:
+      - content:
+          $ref: '#/spec/panels/payment-throughput'
+        height: 5
+        width: 6
+        x: 0
+        y: 0
+      - content:
+          $ref: '#/spec/panels/payment-error-rate'
+        height: 5
+        width: 6
+        x: 6
+        y: 0
+      - content:
+          $ref: '#/spec/panels/payment-error-logs'
+        height: 5
+        width: 6
+        x: 12
+        y: 0
+      - content:
+          $ref: '#/spec/panels/payment-p99-latency'
+        height: 5
+        width: 6
+        x: 18
+        y: 0
+  - kind: Grid
+    spec:
+      display:
+        collapse:
+          open: true
+        title: Span Rate & Operations
+      items:
+      - content:
+          $ref: '#/spec/panels/payment-span-rate'
+        height: 8
+        width: 12
+        x: 0
+        y: 0
+      - content:
+          $ref: '#/spec/panels/payment-operations-pie'
+        height: 8
+        width: 12
+        x: 12
+        y: 0
+  - kind: Grid
+    spec:
+      display:
+        collapse:
+          open: true
+        title: Logs
+      items:
+      - content:
+          $ref: '#/spec/panels/payment-log-volume'
+        height: 8
+        width: 24
+        x: 0
+        y: 0
+  panels:
+    payment-throughput:
+      kind: Panel
+      spec:
+        display:
+          name: Payment Throughput (spans/sec)
+        plugin:
+          kind: StatChart
+          spec:
+            calculation: last-number
+            format:
+              decimalPlaces: 2
+              shortValues: false
+              unit: decimal
+        queries:
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: >-
+                  sum(rate({otel_metric_name="dash0.spans", service_name="payment"}[$__rate_interval]))
+                seriesNameFormat: spans/sec
+                datasource:
+                  kind: PrometheusDatasource
+                  spec:
+                    dataset: astronomy-demo
+    payment-error-rate:
+      kind: Panel
+      spec:
+        display:
+          name: Error Rate (%)
+        plugin:
+          kind: StatChart
+          spec:
+            calculation: last-number
+            format:
+              decimalPlaces: 2
+              unit: percent
+            thresholds:
+              steps:
+              - color: '#7dc540'
+                value: 0
+              - color: '#f5d30f'
+                value: 5
+              - color: '#dc172a'
+                value: 20
+        queries:
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: >-
+                  sum(rate({otel_metric_name="dash0.spans", service_name="payment", otel_span_status_code="ERROR"}[$__rate_interval])) / clamp_min(sum(rate({otel_metric_name="dash0.spans", service_name="payment"}[$__rate_interval])), 1e-10) * 100
+                seriesNameFormat: Error %
+                datasource:
+                  kind: PrometheusDatasource
+                  spec:
+                    dataset: astronomy-demo
+    payment-error-logs:
+      kind: Panel
+      spec:
+        display:
+          name: Error Logs (30m)
+        plugin:
+          kind: StatChart
+          spec:
+            calculation: last-number
+            format:
+              shortValues: true
+              unit: decimal
+            thresholds:
+              steps:
+              - color: '#7dc540'
+                value: 0
+              - color: '#f5d30f'
+                value: 5
+              - color: '#dc172a'
+                value: 20
+        queries:
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: >-
+                  sum(increase({otel_metric_name="dash0.logs", service_name="payment", otel_log_severity_range=~"ERROR|FATAL"}[30m]))
+                seriesNameFormat: Error Logs
+                datasource:
+                  kind: PrometheusDatasource
+                  spec:
+                    dataset: astronomy-demo
+    payment-p99-latency:
+      kind: Panel
+      spec:
+        display:
+          name: P99 Latency (ms)
+        plugin:
+          kind: StatChart
+          spec:
+            calculation: last-number
+            format:
+              decimalPlaces: 1
+              shortValues: false
+              unit: decimal
+        queries:
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: >-
+                  histogram_quantile(0.99, sum by (le) (rate({otel_metric_name="dash0.spans.duration", service_name="payment"}[$__rate_interval]))) * 1000
+                seriesNameFormat: p99 ms
+                datasource:
+                  kind: PrometheusDatasource
+                  spec:
+                    dataset: astronomy-demo
+    payment-span-rate:
+      kind: Panel
+      spec:
+        display:
+          name: Payment Span Rate Over Time
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              position: right
+            yAxis:
+              label: spans/sec
+        queries:
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: >-
+                  sum(rate({otel_metric_name="dash0.spans", service_name="payment"}[$__rate_interval]))
+                seriesNameFormat: Total
+                datasource:
+                  kind: PrometheusDatasource
+                  spec:
+                    dataset: astronomy-demo
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: >-
+                  sum(rate({otel_metric_name="dash0.spans", service_name="payment", otel_span_status_code="ERROR"}[$__rate_interval]))
+                seriesNameFormat: Errors
+                datasource:
+                  kind: PrometheusDatasource
+                  spec:
+                    dataset: astronomy-demo
+    payment-operations-pie:
+      kind: Panel
+      spec:
+        display:
+          name: Span Name Distribution
+        plugin:
+          kind: PieChart
+          spec:
+            calculation: last-number
+            format:
+              unit: decimal
+              decimalPlaces: 0
+              shortValues: true
+            thresholds: {}
+        queries:
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: >-
+                  sum by (dash0_operation_name) (rate({otel_metric_name="dash0.spans", service_name="payment"}[$__rate_interval]))
+                seriesNameFormat: '{{dash0_operation_name}}'
+                datasource:
+                  kind: PrometheusDatasource
+                  spec:
+                    dataset: astronomy-demo
+    payment-log-volume:
+      kind: Panel
+      spec:
+        display:
+          name: Payment Log Volume
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              position: right
+            yAxis:
+              label: logs/sec
+            visual:
+              display: bar
+        queries:
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: >-
+                  sum by (otel_log_severity_range) (rate({otel_metric_name="dash0.logs", service_name="payment"}[$__rate_interval]))
+                seriesNameFormat: '{{otel_log_severity_range}}'
+                datasource:
+                  kind: PrometheusDatasource
+                  spec:
+                    dataset: astronomy-demo
+  variables: []
