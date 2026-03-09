@@ -31,8 +31,9 @@ spec:
   retries:
     kind: linear
     spec:
-      count: 2
+      attempts: 2
       delay: 5s
+      maximumDelay: 30s
   schedule:
     interval: 5m
     locations:
