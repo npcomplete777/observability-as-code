@@ -1,0 +1,29 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: system-high-cpu-utilization
+  namespace: otel-demo
+  labels:
+    app.kubernetes.io/managed-by: dash0-operator
+spec:
+  groups:
+    - name: system-alerts
+      interval: 2m
+      rules:
+        - alert: SystemHighCpuUtilization
+          expr: >-
+            avg_over_time({otel_metric_name="system.cpu.utilization"}[5m]) > 0.85
+          for: 5m
+          labels:
+            severity: warning
+            domain: system
+            component: cpu
+            source: kibana-migration
+          annotations:
+            summary: "System CPU utilization exceeds 85%"
+            description: >-
+              Migrated from Kibana rule: [System] High CPU Utilization (>85%)
+              (type: .es-query). Original rule checked otel-metrics* for
+              system.cpu.utilization >= 0.85 with > 3 hits in 5m window,
+              evaluated every 2m. The Dash0 equivalent queries the
+              system.cpu.utilization OTel metric directly via PromQL.
