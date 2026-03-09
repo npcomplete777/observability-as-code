@@ -1,0 +1,217 @@
+apiVersion: perses.dev/v1alpha1
+kind: PersesDashboard
+metadata:
+  name: otel-unified-observability
+  namespace: otel-demo
+  labels:
+    app.kubernetes.io/managed-by: dash0-operator
+    dash0.com/origin: api-10705897-4bd5-47b5-9a8f-38beaca6137f
+spec:
+  display:
+    name: OTel Unified Observability
+  duration: 1h
+  layouts:
+  - kind: Grid
+    spec:
+      display:
+        collapse:
+          open: true
+        title: Traces & Logs Overview
+      items:
+      - content:
+          $ref: '#/spec/panels/trace-volume'
+        height: 8
+        width: 12
+        x: 0
+        y: 0
+      - content:
+          $ref: '#/spec/panels/log-volume'
+        height: 8
+        width: 12
+        x: 12
+        y: 0
+      - content:
+          $ref: '#/spec/panels/error-spans-by-service'
+        height: 8
+        width: 12
+        x: 0
+        y: 8
+      - content:
+          $ref: '#/spec/panels/span-status-distribution'
+        height: 8
+        width: 12
+        x: 12
+        y: 8
+  - kind: Grid
+    spec:
+      display:
+        collapse:
+          open: true
+        title: Correlation Tables
+      items:
+      - content:
+          $ref: '#/spec/panels/trace-correlation-table'
+        height: 10
+        width: 24
+        x: 0
+        y: 0
+      - content:
+          $ref: '#/spec/panels/log-volume-by-service'
+        height: 10
+        width: 24
+        x: 0
+        y: 10
+  panels:
+    trace-volume:
+      kind: Panel
+      spec:
+        display:
+          name: Trace Volume
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              position: right
+            yAxis:
+              label: spans/s
+        queries:
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: sum by (service_name) (rate({otel_metric_name="dash0.spans"}[$__rate_interval]))
+                seriesNameFormat: '{{service_name}}'
+                datasource:
+                  kind: PrometheusDatasource
+                  spec:
+                    dataset: astronomy-demo
+    log-volume:
+      kind: Panel
+      spec:
+        display:
+          name: Log Volume
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              position: right
+            visual:
+              areaOpacity: 0.55
+              display: line
+            yAxis:
+              label: logs/s
+        queries:
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: sum by (service_name) (rate({otel_metric_name="dash0.logs"}[$__rate_interval]))
+                seriesNameFormat: '{{service_name}}'
+                datasource:
+                  kind: PrometheusDatasource
+                  spec:
+                    dataset: astronomy-demo
+    error-spans-by-service:
+      kind: Panel
+      spec:
+        display:
+          name: Error Spans by Service
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              position: right
+            visual:
+              display: bar
+              stacking: normal
+            yAxis:
+              label: errors/s
+        queries:
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: sum by (service_name) (rate({otel_metric_name="dash0.spans", otel_span_status_code="ERROR"}[$__rate_interval]))
+                seriesNameFormat: '{{service_name}}'
+                datasource:
+                  kind: PrometheusDatasource
+                  spec:
+                    dataset: astronomy-demo
+    span-status-distribution:
+      kind: Panel
+      spec:
+        display:
+          name: Span Status Distribution
+        plugin:
+          kind: PieChart
+          spec:
+            calculation: last-number
+            format:
+              decimalPlaces: 0
+              shortValues: true
+              unit: decimal
+            thresholds: {}
+        queries:
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: sum by (otel_span_status_code) (rate({otel_metric_name="dash0.spans"}[$__rate_interval]))
+                seriesNameFormat: '{{otel_span_status_code}}'
+                datasource:
+                  kind: PrometheusDatasource
+                  spec:
+                    dataset: astronomy-demo
+    trace-correlation-table:
+      kind: Panel
+      spec:
+        display:
+          name: Trace Correlation Table
+        plugin:
+          kind: TimeSeriesTable
+          spec:
+            format:
+              decimalPlaces: 2
+              shortValues: false
+              unit: decimal
+        queries:
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: sum by (service_name, rpc_method, otel_span_status_code) (rate({otel_metric_name="dash0.spans", rpc_method!=""}[$__rate_interval]))
+                seriesNameFormat: '{{service_name}} / {{rpc_method}} / {{otel_span_status_code}}'
+                datasource:
+                  kind: PrometheusDatasource
+                  spec:
+                    dataset: astronomy-demo
+    log-volume-by-service:
+      kind: Panel
+      spec:
+        display:
+          name: Log Volume by Service
+        plugin:
+          kind: TimeSeriesTable
+          spec:
+            format:
+              decimalPlaces: 2
+              shortValues: false
+              unit: decimal
+        queries:
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: sum by (service_name) (rate({otel_metric_name="dash0.logs"}[$__rate_interval]))
+                seriesNameFormat: '{{service_name}}'
+                datasource:
+                  kind: PrometheusDatasource
+                  spec:
+                    dataset: astronomy-demo
+  variables: []
