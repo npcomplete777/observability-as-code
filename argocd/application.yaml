@@ -1,0 +1,39 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: observability-as-code
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: dash0-config
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/npcomplete777/observability-as-code.git
+    targetRevision: main
+    path: .
+    directory:
+      recurse: true
+      include: "*.yaml"
+      exclude: "README.md"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: otel-demo
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=false
+      - PrunePropagationPolicy=foreground
+      - ApplyOutOfSyncOnly=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+  ignoreDifferences:
+    - group: ""
+      kind: ConfigMap
+      jsonPointers:
+        - /data
