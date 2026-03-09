@@ -1,0 +1,29 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: nodejs-high-event-loop-delay
+  namespace: otel-demo
+  labels:
+    app.kubernetes.io/managed-by: dash0-operator
+spec:
+  groups:
+    - name: nodejs-alerts
+      interval: 2m
+      rules:
+        - alert: NodejsHighEventLoopDelay
+          expr: >-
+            max({otel_metric_name="nodejs.eventloop.delay.p99"}) > 50
+          for: 5m
+          labels:
+            severity: warning
+            domain: nodejs
+            component: eventloop
+            source: kibana-migration
+          annotations:
+            summary: "Node.js event loop p99 delay exceeds 50ms"
+            description: >-
+              Migrated from Kibana rule: [Node.js] High Event Loop Delay (p99 >50ms)
+              (type: .es-query). Original rule checked otel-metrics* for
+              nodejs.eventloop.delay.p99 >= 50 with > 3 hits in 5m window,
+              evaluated every 2m. The Dash0 equivalent queries the
+              nodejs.eventloop.delay.p99 OTel metric directly via PromQL.
