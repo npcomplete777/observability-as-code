@@ -1,0 +1,29 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: kafka-under-replicated-partitions
+  namespace: otel-demo
+  labels:
+    app.kubernetes.io/managed-by: dash0-operator
+    dash0.com/origin: api-181659cf-9c19-464c-a922-84f84818078b
+spec:
+  groups:
+    - name: kafka-alerts
+      interval: 2m
+      rules:
+        - alert: KafkaUnderReplicatedPartitions
+          expr: sum({otel_metric_name="kafka.partition.underReplicated", otel_metric_type="sum"}) > 0
+          for: 5m
+          labels:
+            severity: critical
+            component: broker
+            domain: kafka
+            source: kibana-migration
+          annotations:
+            summary: "Kafka partitions are under-replicated"
+            description: >-
+              Migrated from Kibana rule: [Kafka] Under-Replicated Partitions
+              (type: .es-query). Original rule detected documents in otel-metrics*
+              where kafka.partition.underReplicated > 0, evaluated every 2m with
+              a 5m window. The Dash0 equivalent queries the
+              kafka.partition.underReplicated OTel metric directly via PromQL.
