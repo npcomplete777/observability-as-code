@@ -1,0 +1,23 @@
+apiVersion: operator.dash0.com/v1beta1
+kind: Dash0SyntheticCheck
+metadata:
+  name: mcp-smoke-test-check
+  namespace: otel-demo
+  labels:
+    app.kubernetes.io/managed-by: dash0-operator
+    dash0.com/origin: api-898f52b9-449f-40b4-8ca7-659ceea37cc6
+spec:
+  enabled: false
+  plugin:
+    kind: http
+    spec:
+      request:
+        method: get
+        redirects: follow
+        url: https://httpbin.org/status/200
+  schedule:
+    interval: 10m
+    locations:
+      - de-frankfurt
+      - uk-london
+    strategy: all_locations
