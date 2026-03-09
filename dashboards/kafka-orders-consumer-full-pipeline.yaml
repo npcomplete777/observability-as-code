@@ -153,7 +153,8 @@ spec:
             plugin:
               kind: PrometheusTimeSeriesQuery
               spec:
-                query: avg by (service_name) (kafka_consumer_records_consumed_rate)
+                query: >-
+                  avg by (service_name) ({otel_metric_name="kafka.consumer.records_consumed_rate", otel_metric_type="gauge"})
                 seriesNameFormat: '{{service_name}}'
     consumer-lag-max:
       kind: Panel
@@ -176,7 +177,8 @@ spec:
             plugin:
               kind: PrometheusTimeSeriesQuery
               spec:
-                query: max by (service_name) (kafka_consumer_records_lag_max)
+                query: >-
+                  max by (service_name) ({otel_metric_name="kafka.consumer.records_lag_max", otel_metric_type="gauge"})
                 seriesNameFormat: '{{service_name}}'
     consumer-fetch-latency:
       kind: Panel
@@ -196,14 +198,16 @@ spec:
             plugin:
               kind: PrometheusTimeSeriesQuery
               spec:
-                query: avg(kafka_consumer_fetch_latency_avg)
+                query: >-
+                  avg({otel_metric_name="kafka.consumer.fetch_latency_avg", otel_metric_type="gauge"})
                 seriesNameFormat: Fetch Latency Avg
         - kind: TimeSeriesQuery
           spec:
             plugin:
               kind: PrometheusTimeSeriesQuery
               spec:
-                query: max(kafka_consumer_fetch_latency_max)
+                query: >-
+                  max({otel_metric_name="kafka.consumer.fetch_latency_max", otel_metric_type="gauge"})
                 seriesNameFormat: Fetch Latency Max
     broker-partitions-message-count:
       kind: Panel
@@ -221,14 +225,16 @@ spec:
             plugin:
               kind: PrometheusTimeSeriesQuery
               spec:
-                query: last_over_time(kafka_partition_count[5m])
+                query: >-
+                  last_over_time({otel_metric_name="kafka.partition.count", otel_metric_type="sum"}[5m])
                 seriesNameFormat: Partition Count
         - kind: TimeSeriesQuery
           spec:
             plugin:
               kind: PrometheusTimeSeriesQuery
               spec:
-                query: max(kafka_message_count)
+                query: >-
+                  max(increase({otel_metric_name="kafka.message.count", otel_metric_type="sum"}[5m]))
                 seriesNameFormat: Messages In
     broker-request-latency-p50-p99:
       kind: Panel
@@ -248,14 +254,16 @@ spec:
             plugin:
               kind: PrometheusTimeSeriesQuery
               spec:
-                query: avg(kafka_request_time_50p)
+                query: >-
+                  avg({otel_metric_name="kafka.request.time.50p", otel_metric_type="gauge"})
                 seriesNameFormat: Request Time p50
         - kind: TimeSeriesQuery
           spec:
             plugin:
               kind: PrometheusTimeSeriesQuery
               spec:
-                query: avg(kafka_request_time_99p)
+                query: >-
+                  avg({otel_metric_name="kafka.request.time.99p", otel_metric_type="gauge"})
                 seriesNameFormat: Request Time p99
     consumer-bytes-consumed-rate-by-service:
       kind: Panel
@@ -278,7 +286,8 @@ spec:
             plugin:
               kind: PrometheusTimeSeriesQuery
               spec:
-                query: avg by (service_name) (kafka_consumer_bytes_consumed_rate)
+                query: >-
+                  avg by (service_name) ({otel_metric_name="kafka.consumer.bytes_consumed_rate", otel_metric_type="gauge"})
                 seriesNameFormat: '{{service_name}}'
     order-pipeline-error-rate:
       kind: Panel
