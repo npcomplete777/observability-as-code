@@ -1,0 +1,27 @@
+apiVersion: operator.dash0.com/v1alpha1
+kind: Dash0OperatorConfiguration
+metadata:
+  name: dash0-operator-configuration-auto-resource
+spec:
+  collectNamespaceLabelsAndAnnotations:
+    enabled: false
+  collectPodLabelsAndAnnotations:
+    enabled: true
+  export:
+    dash0:
+      apiEndpoint: https://api.us-west-2.aws.dash0.com
+      authorization:
+        secretRef:
+          key: token
+          name: dash0-authorization-secret
+      dataset: astronomy-demo
+      endpoint: ingress.us-west-2.aws.dash0.com:4317
+  kubernetesInfrastructureMetricsCollection:
+    enabled: true
+  kubernetesInfrastructureMetricsCollectionEnabled: true
+  prometheusCrdSupport:
+    enabled: false
+  selfMonitoring:
+    enabled: true
+  telemetryCollection:
+    enabled: true

@@ -1,0 +1,30 @@
+apiVersion: operator.dash0.com/v1alpha1
+kind: Dash0View
+metadata:
+  name: otel-demo-error-logs
+  namespace: otel-demo
+spec:
+  display:
+    description: All WARN and ERROR level logs across the OTel demo services
+    folder:
+      - OTel Demo
+    name: OTel Demo - Error & Warning Logs
+  filter:
+    - key: k8s.namespace.name
+      operator: is
+      value: otel-demo
+    - key: severity
+      operator: is_one_of
+      values:
+        - WARN
+        - ERROR
+        - FATAL
+  groupBy:
+    - service.name
+    - severity
+  type: logs
+  visualizations:
+    - metric: logs_rate
+      renderers:
+        - logging/*/stacked_bar
+      yAxisScale: linear

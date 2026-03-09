@@ -1,0 +1,32 @@
+apiVersion: operator.dash0.com/v1alpha1
+kind: Dash0View
+metadata:
+  name: otel-demo-k8s-pods
+  namespace: otel-demo
+spec:
+  display:
+    description: CPU and memory utilization for all pods in the OTel demo namespace
+    folder:
+      - OTel Demo
+    name: OTel Demo - Pod Health
+  filter:
+    - key: k8s.namespace.name
+      operator: is
+      value: otel-demo
+  groupBy:
+    - k8s.pod.name
+  table:
+    columns:
+      - key: k8s.pod.name
+        label: Pod
+      - key: k8s.node.name
+        label: Node
+    sort:
+      - direction: ascending
+        key: k8s.pod.name
+  type: resources
+  visualizations:
+    - renderers:
+        - resources/k8s-pods/cpu-memory
+        - resources/k8s-pods/status
+      yAxisScale: linear

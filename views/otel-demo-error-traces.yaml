@@ -1,0 +1,24 @@
+apiVersion: operator.dash0.com/v1alpha1
+kind: Dash0View
+metadata:
+  name: otel-demo-error-traces
+  namespace: otel-demo
+spec:
+  display:
+    description: All error spans across the OTel demo, sorted by duration to find the slowest failures
+    folder:
+      - OTel Demo
+    name: OTel Demo - Error Traces
+  filter:
+    - key: status
+      operator: is
+      value: ERROR
+  groupBy:
+    - service.name
+    - span.name
+  type: spans
+  visualizations:
+    - metric: spans_errors_rate
+      renderers:
+        - traces-explorer/*/outliers
+      yAxisScale: linear

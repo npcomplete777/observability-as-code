@@ -1,0 +1,30 @@
+apiVersion: operator.dash0.com/v1alpha1
+kind: Dash0View
+metadata:
+  name: otel-demo-services-overview
+  namespace: otel-demo
+spec:
+  display:
+    description: High-level RED metrics for all services in the OpenTelemetry demo application
+    folder:
+      - OTel Demo
+    name: OTel Demo - Services Overview
+  filter:
+    - key: k8s.namespace.name
+      operator: is
+      value: otel-demo
+  groupBy:
+    - service.name
+  table:
+    columns:
+      - key: service.name
+        label: Service
+    sort:
+      - direction: ascending
+        key: service.name
+  type: resources
+  visualizations:
+    - metric: spans_rate
+      renderers:
+        - resources/services/red
+      yAxisScale: linear

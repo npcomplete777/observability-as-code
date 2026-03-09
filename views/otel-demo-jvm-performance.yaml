@@ -1,0 +1,33 @@
+apiVersion: operator.dash0.com/v1alpha1
+kind: Dash0View
+metadata:
+  name: otel-demo-jvm-performance
+  namespace: otel-demo
+spec:
+  display:
+    description: "RED metrics for JVM-based services (ad, fraud-detection, inventory) \u2014 Java and Kotlin runtimes"
+    folder:
+      - OTel Demo
+    name: OTel Demo - JVM Performance
+  filter:
+    - key: service.name
+      operator: is_one_of
+      values:
+        - ad
+        - fraud-detection
+        - inventory
+  groupBy:
+    - service.name
+  table:
+    columns:
+      - key: service.name
+        label: Service
+    sort:
+      - direction: ascending
+        key: service.name
+  type: resources
+  visualizations:
+    - metric: spans_rate
+      renderers:
+        - resources/services/red
+      yAxisScale: linear

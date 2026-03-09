@@ -1,0 +1,18 @@
+apiVersion: operator.dash0.com/v1beta1
+kind: Dash0Monitoring
+metadata:
+  name: dash0-monitoring
+  namespace: otel-demo
+spec:
+  eventCollection:
+    enabled: true
+  instrumentWorkloads:
+    labelSelector: "dash0.com/enable!=false"
+    mode: none
+    traceContext: {}
+  logCollection:
+    enabled: true
+  prometheusScraping:
+    enabled: true
+  synchronizePersesDashboards: true
+  synchronizePrometheusRules: true

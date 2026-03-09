@@ -1,0 +1,29 @@
+apiVersion: operator.dash0.com/v1alpha1
+kind: Dash0View
+metadata:
+  name: otel-demo-kafka-performance
+  namespace: otel-demo
+spec:
+  display:
+    description: "Kafka messaging pipeline: checkout (producer), fraud-detection and accounting (consumers), plus broker metrics from the kafkametrics OTel receiver"
+    folder:
+      - OTel Demo
+    name: OTel Demo - Kafka Performance
+  filter:
+    - key: service.name
+      operator: is_one_of
+      values:
+        - kafka
+        - checkout
+        - fraud-detection
+        - accounting
+        - otel-demo-otel-collector-agent
+  groupBy:
+    - service.name
+    - span.name
+  type: spans
+  visualizations:
+    - metric: spans_duration_p99
+      renderers:
+        - traces-explorer/*/red
+      yAxisScale: linear

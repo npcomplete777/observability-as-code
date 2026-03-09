@@ -1,0 +1,29 @@
+apiVersion: operator.dash0.com/v1alpha1
+kind: Dash0View
+metadata:
+  name: otel-demo-checkout-flow
+  namespace: otel-demo
+spec:
+  display:
+    description: "Traces for the checkout pipeline: cart, checkout, payment, shipping, and order services"
+    folder:
+      - OTel Demo
+    name: OTel Demo - Checkout Flow
+  filter:
+    - key: service.name
+      operator: is_one_of
+      values:
+        - cart
+        - checkout
+        - payment
+        - shipping
+        - order
+        - currency
+  groupBy:
+    - service.name
+  type: spans
+  visualizations:
+    - metric: spans_duration_p99
+      renderers:
+        - traces-explorer/*/red
+      yAxisScale: linear
