@@ -1,0 +1,38 @@
+apiVersion: operator.dash0.com/v1alpha1
+kind: Dash0SyntheticCheck
+metadata:
+  name: o11y-alchemy-homepage
+  namespace: otel-demo
+  labels:
+    app.kubernetes.io/managed-by: dash0-operator
+spec:
+  display:
+    name: ""
+  enabled: true
+  plugin:
+    kind: http
+    spec:
+      request:
+        method: get
+        redirects: follow
+        url: https://o11y-alchemy.com
+        headers: []
+        queryParameters: []
+        tls:
+          allowInsecure: false
+        tracing:
+          addTracingHeaders: false
+      assertions:
+        criticalAssertions: []
+        degradedAssertions: []
+  notifications:
+    channels: []
+  retries:
+    kind: "off"
+    spec: {}
+  schedule:
+    interval: 5m
+    locations:
+      - de-frankfurt
+      - uk-london
+    strategy: all_locations
