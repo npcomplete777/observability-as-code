@@ -1,0 +1,30 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: kafka-offline-partitions
+  namespace: otel-demo
+  labels:
+    app.kubernetes.io/managed-by: dash0-operator
+spec:
+  groups:
+    - name: kafka-alerts
+      interval: 2m
+      rules:
+        - alert: KafkaOfflinePartitions
+          expr: >-
+            sum({otel_metric_name="kafka.partition.offline",
+              otel_metric_type="sum"}) > 0
+          for: 5m
+          labels:
+            severity: critical
+            component: broker
+            domain: kafka
+            source: kibana-migration
+          annotations:
+            summary: "Kafka partitions are offline"
+            description: >-
+              Migrated from Kibana rule: [Kafka] Offline Partitions
+              (type: .es-query). Original rule checked otel-metrics* for
+              kafka.partition.offline > 0 with >= 1 hit in 5m window,
+              evaluated every 2m. The Dash0 equivalent queries the
+              kafka.partition.offline OTel metric directly via PromQL.
