@@ -1,0 +1,198 @@
+apiVersion: perses.dev/v1alpha1
+kind: PersesDashboard
+metadata:
+  name: otel-error-analysis
+  namespace: otel-demo
+  labels:
+    app.kubernetes.io/managed-by: dash0-operator
+    dash0.com/origin: api-738ef574-1b39-4c1c-8ed6-a03ad705f969
+spec:
+  display:
+    name: OTel Error Analysis
+  duration: 1h
+  layouts:
+  - kind: Grid
+    spec:
+      display:
+        collapse:
+          open: true
+        title: Error Overview
+      items:
+      - content:
+          $ref: '#/spec/panels/error-rate-over-time'
+        height: 8
+        width: 24
+        x: 0
+        y: 0
+  - kind: Grid
+    spec:
+      display:
+        collapse:
+          open: true
+        title: Error Breakdown
+      items:
+      - content:
+          $ref: '#/spec/panels/errors-by-service'
+        height: 8
+        width: 12
+        x: 0
+        y: 0
+      - content:
+          $ref: '#/spec/panels/http-error-codes'
+        height: 8
+        width: 12
+        x: 12
+        y: 0
+  - kind: Grid
+    spec:
+      display:
+        collapse:
+          open: true
+        title: Details
+      items:
+      - content:
+          $ref: '#/spec/panels/grpc-error-codes'
+        height: 8
+        width: 12
+        x: 0
+        y: 0
+      - content:
+          $ref: '#/spec/panels/error-details-table'
+        height: 8
+        width: 12
+        x: 12
+        y: 0
+  panels:
+    error-rate-over-time:
+      kind: Panel
+      spec:
+        display:
+          name: Error Rate Over Time
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              position: right
+            visual:
+              areaOpacity: 0.55
+              display: line
+        queries:
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: >-
+                  sum by (service_name) (rate({otel_metric_name="dash0.spans", otel_span_status_code="ERROR"}[$__rate_interval]))
+                seriesNameFormat: '{{service_name}}'
+                datasource:
+                  kind: PrometheusDatasource
+                  spec:
+                    dataset: astronomy-demo
+    errors-by-service:
+      kind: Panel
+      spec:
+        display:
+          name: Errors by Service
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              position: right
+            yAxis:
+              label: errors/s
+            visual:
+              display: bar
+        queries:
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: >-
+                  topk(15, sum by (service_name) (rate({otel_metric_name="dash0.spans", otel_span_status_code="ERROR"}[$__rate_interval])))
+                seriesNameFormat: '{{service_name}}'
+                datasource:
+                  kind: PrometheusDatasource
+                  spec:
+                    dataset: astronomy-demo
+    http-error-codes:
+      kind: Panel
+      spec:
+        display:
+          name: HTTP Error Codes
+        plugin:
+          kind: PieChart
+          spec:
+            calculation: last-number
+            format:
+              unit: decimal
+              decimalPlaces: 0
+              shortValues: true
+            thresholds: {}
+        queries:
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: >-
+                  sum by (http_response_status_code) (rate({otel_metric_name="dash0.spans", http_response_status_code=~"4..|5.."}[$__rate_interval]))
+                seriesNameFormat: '{{http_response_status_code}}'
+                datasource:
+                  kind: PrometheusDatasource
+                  spec:
+                    dataset: astronomy-demo
+    grpc-error-codes:
+      kind: Panel
+      spec:
+        display:
+          name: gRPC Error Codes
+        plugin:
+          kind: PieChart
+          spec:
+            calculation: last-number
+            format:
+              unit: decimal
+              decimalPlaces: 0
+              shortValues: true
+            thresholds: {}
+        queries:
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: >-
+                  sum by (rpc_grpc_status_code) (rate({otel_metric_name="dash0.spans", rpc_grpc_status_code!="0", rpc_grpc_status_code!=""}[$__rate_interval]))
+                seriesNameFormat: 'gRPC {{rpc_grpc_status_code}}'
+                datasource:
+                  kind: PrometheusDatasource
+                  spec:
+                    dataset: astronomy-demo
+    error-details-table:
+      kind: Panel
+      spec:
+        display:
+          name: Error Details
+        plugin:
+          kind: TimeSeriesTable
+          spec:
+            format:
+              decimalPlaces: 4
+              shortValues: false
+              unit: decimal
+        queries:
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: >-
+                  topk(20, sum by (service_name, dash0_operation_name) (rate({otel_metric_name="dash0.spans", otel_span_status_code="ERROR"}[$__rate_interval])))
+                seriesNameFormat: '{{service_name}} -> {{dash0_operation_name}}'
+                datasource:
+                  kind: PrometheusDatasource
+                  spec:
+                    dataset: astronomy-demo
+  variables: []
