@@ -1,4 +1,4 @@
-apiVersion: persesdev.io/v1alpha1
+apiVersion: perses.dev/v1alpha1
 kind: PersesDashboard
 metadata:
   name: ad-service-java-investigation
