@@ -1,0 +1,123 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: ad-service-jvm-baseline-alerts
+  namespace: otel-demo
+  labels:
+    app.kubernetes.io/managed-by: dash0-operator
+spec:
+  groups:
+    - name: ad-service-jvm-cpu-alerts
+      interval: 1m
+      rules:
+        - alert: AdServiceJvmCpuSpike
+          expr: >-
+            avg({otel_metric_name="jvm.cpu.recent_utilization", service_name="ad"}) > 0.05
+          for: 3m
+          labels:
+            severity: warning
+            domain: jvm
+            component: cpu
+            service: ad
+            source: jvm-deep-dive-investigation
+          annotations:
+            summary: "Ad Service JVM CPU utilization exceeds 5%"
+            description: >-
+              Ad service JVM CPU utilization has exceeded 5% for 3+ minutes.
+              Baseline is ~0.006%. Current value: {{ $value | humanizePercentage }}.
+              Investigate GC activity and thread counts. The existing JvmHighCpuUtilization
+              rule at 80% is calibrated for full saturation and missed a 4,000x spike
+              to 24.5% during the 11:29-11:44 UTC GC storm on 2026-03-10.
+
+    - name: ad-service-jvm-gc-alerts
+      interval: 1m
+      rules:
+        - alert: AdServiceGcTimeStorm
+          expr: >-
+            sum(increase({otel_metric_name="jvm.gc.duration", service_name="ad"}[5m])) > 10
+          for: 2m
+          labels:
+            severity: critical
+            domain: jvm
+            component: gc
+            service: ad
+            source: jvm-deep-dive-investigation
+          annotations:
+            summary: "Ad Service GC storm - cumulative GC time exceeds 10s in 5 minutes"
+            description: >-
+              Ad service accumulated {{ $value }}s of GC time in a 5-minute window.
+              Normal baseline is ~0s. Values above 10s indicate a GC storm causing
+              stop-the-world pauses. The 11:29-11:44 UTC incident on 2026-03-10 saw
+              220-261s of cumulative GC time. The existing JvmHighGcDurationAdInventory
+              rule uses P95 histogram quantile > 500ms which missed this because individual
+              pause durations were only ~96ms — the problem was GC frequency, not
+              individual pause length.
+
+    - name: ad-service-jvm-memory-alerts
+      interval: 1m
+      rules:
+        - alert: AdServiceMemoryLeakPattern
+          expr: >-
+            deriv(sum({otel_metric_name="jvm.memory.used", service_name="ad"})[30m:5m]) > 50000
+          for: 5m
+          labels:
+            severity: warning
+            domain: jvm
+            component: memory
+            service: ad
+            source: jvm-deep-dive-investigation
+          annotations:
+            summary: "Ad Service memory growing steadily - possible leak"
+            description: >-
+              Ad service heap memory is growing at a sustained rate of {{ $value }}
+              bytes/sec over 30 minutes. The sawtooth pattern (steady climb at ~2MB
+              per 5 minutes, then GC drop, then climb again) indicates a likely memory
+              leak or object retention issue. The existing JvmHighHeapMemoryUsage rule
+              at 85% of limit will never fire because heap limit is 1.4GB while usage
+              peaks at only ~167MB (12%).
+
+    - name: ad-service-error-alerts
+      interval: 1m
+      rules:
+        - alert: AdServiceErrorRateElevated
+          expr: >-
+            sum(rate({otel_metric_name="dash0.spans", service_name="ad",
+            otel_span_status_code="ERROR"}[5m])) /
+            clamp_min(sum(rate({otel_metric_name="dash0.spans",
+            service_name="ad"}[5m])), 1e-10) > 0.05
+          for: 3m
+          labels:
+            severity: warning
+            domain: service
+            component: errors
+            service: ad
+            source: jvm-deep-dive-investigation
+          annotations:
+            summary: "Ad Service error rate exceeds 5%"
+            description: >-
+              Ad service error rate is {{ $value | humanizePercentage }}, exceeding
+              the 5% threshold for 3+ minutes. The global HighServiceErrorRate rule
+              at 10% is too high to catch degradation — during the GC storm on
+              2026-03-10, errors reached 8.5% but never crossed 10%.
+
+    - name: ad-service-jvm-thread-alerts
+      interval: 1m
+      rules:
+        - alert: AdServiceThreadCountAnomaly
+          expr: >-
+            sum({otel_metric_name="jvm.thread.count", service_name="ad"}) > 39
+          for: 2m
+          labels:
+            severity: warning
+            domain: jvm
+            component: threads
+            service: ad
+            source: jvm-deep-dive-investigation
+          annotations:
+            summary: "Ad Service thread count elevated above baseline"
+            description: >-
+              Ad service thread count is {{ $value }}, exceeding the baseline
+              range of 35-37 for 2+ minutes. Thread count spiked to 40-42 during
+              the GC storm on 2026-03-10. Elevated threads can indicate thread pool
+              exhaustion, blocked I/O, or cascading timeouts from GC pauses.
+              No prior rule existed for thread count monitoring.
