@@ -1,0 +1,31 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: jvm-possible-memory-leak
+  namespace: otel-demo
+  labels:
+    app.kubernetes.io/managed-by: dash0-operator
+spec:
+  groups:
+    - name: jvm-alerts
+      interval: 2m
+      rules:
+        - alert: JvmPossibleMemoryLeak
+          expr: >-
+            {otel_metric_name="jvm.memory.used_after_last_gc"} / {otel_metric_name="jvm.memory.limit"} > 0.7
+          for: 10m
+          labels:
+            severity: warning
+            domain: jvm
+            component: gc
+            source: kibana-migration
+          annotations:
+            summary: "JVM memory after GC exceeds 70% of limit - possible memory leak"
+            description: >-
+              Migrated from Kibana rule: [JVM] Possible Memory Leak - High Memory
+              After GC (>70% of limit)
+              (type: .es-query, ID: 734078ca-a203-45d9-8ce9-1decc3712131).
+              Original rule used a Painless script to compute
+              jvm.memory.used_after_last_gc / jvm.memory.limit > 0.70
+              with > 5 hits in 10m window on otel-metrics*, evaluated
+              every 2m. Tags: jvm, gc, memory-leak, production, warning.
