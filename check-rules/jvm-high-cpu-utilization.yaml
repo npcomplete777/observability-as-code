@@ -1,0 +1,29 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: jvm-high-cpu-utilization
+  namespace: otel-demo
+  labels:
+    app.kubernetes.io/managed-by: dash0-operator
+spec:
+  groups:
+    - name: jvm-alerts
+      interval: 1m
+      rules:
+        - alert: JvmHighCpuUtilization
+          expr: >-
+            avg_over_time({otel_metric_name="jvm.cpu.recent_utilization"}[5m]) > 0.8
+          for: 5m
+          labels:
+            severity: critical
+            domain: jvm
+            component: cpu
+            source: kibana-migration
+          annotations:
+            summary: "JVM CPU utilization exceeds 80%"
+            description: >-
+              Migrated from Kibana rule: [JVM] High CPU Utilization (>80%)
+              (type: .es-query, ID: 7faac046-8ea2-4ce7-b55b-17f0ad546fcc).
+              Original rule checked otel-metrics* for
+              jvm.cpu.recent_utilization >= 0.8 with > 3 hits in 5m window,
+              evaluated every 1m. Tags: jvm, cpu, production, critical.
