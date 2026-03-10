@@ -12,7 +12,9 @@ spec:
       rules:
         - alert: JvmHighHeapMemoryUsage
           expr: >-
-            {otel_metric_name="jvm.memory.used"} / {otel_metric_name="jvm.memory.limit"} > 0.85
+            sum by (dash0_resource_name) ({otel_metric_name="jvm.memory.used", jvm_memory_type="heap"})
+            / sum by (dash0_resource_name) ({otel_metric_name="jvm.memory.limit", jvm_memory_type="heap"})
+            > 0.85
           for: 5m
           labels:
             severity: critical
