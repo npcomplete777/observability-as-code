@@ -1,0 +1,31 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: jvm-no-metrics-data-received
+  namespace: otel-demo
+  labels:
+    app.kubernetes.io/managed-by: dash0-operator
+spec:
+  groups:
+    - name: jvm-alerts
+      interval: 5m
+      rules:
+        - alert: JvmNoMetricsDataReceived
+          expr: >-
+            absent_over_time({otel_metric_name="jvm.memory.used"}[10m])
+          for: 10m
+          labels:
+            severity: critical
+            domain: jvm
+            component: data-gap
+            source: kibana-migration
+          annotations:
+            summary: "No JVM metrics data received for 10 minutes"
+            description: >-
+              Migrated from Kibana rule: [JVM] No Metrics Data Received (data gap)
+              (type: .index-threshold, ID: 565544ef-ebec-4bbc-876c-24a0950bfdbb).
+              Original rule checked otel-metrics* with KQL filter
+              jvm.memory.used: * and fired when count < 1 in 10m window,
+              evaluated every 5m. The PromQL equivalent uses
+              absent_over_time to detect missing JVM metric data.
+              Tags: jvm, data-gap, production, critical.
