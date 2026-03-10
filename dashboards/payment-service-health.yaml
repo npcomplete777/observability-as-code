@@ -5,75 +5,162 @@ metadata:
   namespace: otel-demo
   labels:
     app.kubernetes.io/managed-by: dash0-operator
-    dash0.com/origin: api-db781cf1-6192-45e4-b46a-f77e8a009633
 spec:
   display:
     name: Payment Service Health (Node.js)
   duration: 1h
+  variables: []
   layouts:
   - kind: Grid
     spec:
       display:
-        collapse:
-          open: true
         title: KPIs
+        collapse:
+          open: true
       items:
-      - content:
-          $ref: '#/spec/panels/payment-throughput'
-        height: 5
-        width: 6
-        x: 0
+      - x: 0
         y: 0
-      - content:
-          $ref: '#/spec/panels/payment-error-rate'
-        height: 5
         width: 6
-        x: 6
-        y: 0
-      - content:
-          $ref: '#/spec/panels/payment-error-logs'
         height: 5
-        width: 6
-        x: 12
+        content:
+          "$ref": '#/spec/panels/payment-throughput'
+      - x: 6
         y: 0
-      - content:
-          $ref: '#/spec/panels/payment-p99-latency'
+        width: 6
         height: 5
-        width: 6
-        x: 18
+        content:
+          "$ref": '#/spec/panels/payment-error-rate'
+      - x: 12
         y: 0
+        width: 6
+        height: 5
+        content:
+          "$ref": '#/spec/panels/payment-error-logs'
+      - x: 18
+        y: 0
+        width: 6
+        height: 5
+        content:
+          "$ref": '#/spec/panels/payment-p99-latency'
+      - x: 0
+        y: 5
+        width: 6
+        height: 5
+        content:
+          "$ref": '#/spec/panels/payment-transactions'
+      - x: 6
+        y: 5
+        width: 6
+        height: 5
+        content:
+          "$ref": '#/spec/panels/charge-requests'
+      - x: 12
+        y: 5
+        width: 6
+        height: 5
+        content:
+          "$ref": '#/spec/panels/v8-heap-used'
   - kind: Grid
     spec:
       display:
-        collapse:
-          open: true
         title: Span Rate & Operations
+        collapse:
+          open: true
       items:
-      - content:
-          $ref: '#/spec/panels/payment-span-rate'
-        height: 8
-        width: 12
-        x: 0
+      - x: 0
         y: 0
-      - content:
-          $ref: '#/spec/panels/payment-operations-pie'
-        height: 8
         width: 12
-        x: 12
+        height: 8
+        content:
+          "$ref": '#/spec/panels/payment-span-rate'
+      - x: 12
         y: 0
+        width: 12
+        height: 8
+        content:
+          "$ref": '#/spec/panels/payment-operations-pie'
   - kind: Grid
     spec:
       display:
+        title: Transaction Rate & Charge Breakdown
         collapse:
           open: true
-        title: Logs
       items:
-      - content:
-          $ref: '#/spec/panels/payment-log-volume'
-        height: 8
-        width: 24
-        x: 0
+      - x: 0
         y: 0
+        width: 24
+        height: 8
+        content:
+          "$ref": '#/spec/panels/payment-transaction-rate'
+      - x: 0
+        y: 8
+        width: 16
+        height: 8
+        content:
+          "$ref": '#/spec/panels/charge-requests-by-card-type'
+  - kind: Grid
+    spec:
+      display:
+        title: V8 Heap Memory
+        collapse:
+          open: true
+      items:
+      - x: 0
+        y: 0
+        width: 12
+        height: 8
+        content:
+          "$ref": '#/spec/panels/v8-heap-memory'
+      - x: 12
+        y: 0
+        width: 12
+        height: 8
+        content:
+          "$ref": '#/spec/panels/v8-heap-available-space'
+  - kind: Grid
+    spec:
+      display:
+        title: Event Loop Health
+        collapse:
+          open: true
+      items:
+      - x: 0
+        y: 0
+        width: 12
+        height: 8
+        content:
+          "$ref": '#/spec/panels/eventloop-delay-percentiles'
+      - x: 12
+        y: 0
+        width: 12
+        height: 8
+        content:
+          "$ref": '#/spec/panels/eventloop-utilization'
+      - x: 0
+        y: 8
+        width: 12
+        height: 8
+        content:
+          "$ref": '#/spec/panels/eventloop-processing-time'
+      - x: 12
+        y: 8
+        width: 12
+        height: 8
+        content:
+          "$ref": '#/spec/panels/eventloop-delay-jitter'
+  - kind: Grid
+    spec:
+      display:
+        title: Logs
+        collapse:
+          open: true
+      items:
+      - x: 0
+        y: 0
+        width: 24
+        height: 8
+        content:
+          "$ref": '#/spec/panels/payment-log-volume'
   panels:
     payment-throughput:
       kind: Panel
@@ -94,13 +181,13 @@ spec:
             plugin:
               kind: PrometheusTimeSeriesQuery
               spec:
-                query: >-
-                  sum(rate({otel_metric_name="dash0.spans", service_name="payment"}[$__rate_interval]))
-                seriesNameFormat: spans/sec
                 datasource:
                   kind: PrometheusDatasource
                   spec:
                     dataset: astronomy-demo
+                query: >-
+                  sum(rate({otel_metric_name="dash0.spans", service_name="payment"}[$__rate_interval]))
+                seriesNameFormat: spans/sec
     payment-error-rate:
       kind: Panel
       spec:
@@ -127,13 +214,14 @@ spec:
             plugin:
               kind: PrometheusTimeSeriesQuery
               spec:
-                query: >-
-                  sum(rate({otel_metric_name="dash0.spans", service_name="payment", otel_span_status_code="ERROR"}[$__rate_interval])) / clamp_min(sum(rate({otel_metric_name="dash0.spans", service_name="payment"}[$__rate_interval])), 1e-10) * 100
-                seriesNameFormat: Error %
                 datasource:
                   kind: PrometheusDatasource
                   spec:
                     dataset: astronomy-demo
+                query: >-
+                  sum(rate({otel_metric_name="dash0.spans", service_name="payment", otel_span_status_code="ERROR"}[$__rate_interval])) / clamp_min(sum(rate({otel_metric_name="dash0.spans", service_name="payment"}[$__rate_interval])),
+                  1e-10) * 100
+                seriesNameFormat: Error %
     payment-error-logs:
       kind: Panel
       spec:
@@ -160,13 +248,13 @@ spec:
             plugin:
               kind: PrometheusTimeSeriesQuery
               spec:
-                query: >-
-                  sum(increase({otel_metric_name="dash0.logs", service_name="payment", otel_log_severity_range=~"ERROR|FATAL"}[30m]))
-                seriesNameFormat: Error Logs
                 datasource:
                   kind: PrometheusDatasource
                   spec:
                     dataset: astronomy-demo
+                query: >-
+                  sum(increase({otel_metric_name="dash0.logs", service_name="payment", otel_log_severity_range=~"ERROR|FATAL"}[30m]))
+                seriesNameFormat: Error Logs
     payment-p99-latency:
       kind: Panel
       spec:
@@ -186,13 +274,89 @@ spec:
             plugin:
               kind: PrometheusTimeSeriesQuery
               spec:
-                query: >-
-                  histogram_quantile(0.99, sum by (le) (rate({otel_metric_name="dash0.spans.duration", service_name="payment"}[$__rate_interval]))) * 1000
-                seriesNameFormat: p99 ms
                 datasource:
                   kind: PrometheusDatasource
                   spec:
                     dataset: astronomy-demo
+                query: >-
+                  histogram_quantile(0.99, sum by (le) (rate({otel_metric_name="dash0.spans.duration", service_name="payment"}[$__rate_interval]))) * 1000
+                seriesNameFormat: p99 ms
+    payment-transactions:
+      kind: Panel
+      spec:
+        display:
+          name: Payment Transactions
+        plugin:
+          kind: StatChart
+          spec:
+            calculation: last-number
+            format:
+              shortValues: true
+              unit: decimal
+            sparkline: {}
+        queries:
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                datasource:
+                  kind: PrometheusDatasource
+                  spec:
+                    dataset: astronomy-demo
+                query: >-
+                  sum(increase({otel_metric_name="app.payment.transactions", service_name="payment"}[$__rate_interval]))
+                seriesNameFormat: Sum of app.payment.transactions
+    charge-requests:
+      kind: Panel
+      spec:
+        display:
+          name: Charge Requests
+        plugin:
+          kind: StatChart
+          spec:
+            calculation: last-number
+            format:
+              shortValues: true
+              unit: decimal
+        queries:
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                datasource:
+                  kind: PrometheusDatasource
+                  spec:
+                    dataset: astronomy-demo
+                query: >-
+                  sum(increase({otel_metric_name="dash0.spans", service_name="payment", dash0_operation_name="oteldemo.PaymentService/Charge"}[$__rate_interval]))
+                seriesNameFormat: gRPC charge spans
+    v8-heap-used:
+      kind: Panel
+      spec:
+        display:
+          name: V8 Heap Used
+        plugin:
+          kind: StatChart
+          spec:
+            calculation: last-number
+            format:
+              shortValues: true
+              unit: bytes
+        queries:
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                datasource:
+                  kind: PrometheusDatasource
+                  spec:
+                    dataset: astronomy-demo
+                query: >-
+                  avg({otel_metric_name="v8js.memory.heap.used", service_name="payment"})
+                seriesNameFormat: average
     payment-span-rate:
       kind: Panel
       spec:
@@ -211,25 +375,25 @@ spec:
             plugin:
               kind: PrometheusTimeSeriesQuery
               spec:
-                query: >-
-                  sum(rate({otel_metric_name="dash0.spans", service_name="payment"}[$__rate_interval]))
-                seriesNameFormat: Total
                 datasource:
                   kind: PrometheusDatasource
                   spec:
                     dataset: astronomy-demo
+                query: >-
+                  sum(rate({otel_metric_name="dash0.spans", service_name="payment"}[$__rate_interval]))
+                seriesNameFormat: Total
         - kind: TimeSeriesQuery
           spec:
             plugin:
               kind: PrometheusTimeSeriesQuery
               spec:
-                query: >-
-                  sum(rate({otel_metric_name="dash0.spans", service_name="payment", otel_span_status_code="ERROR"}[$__rate_interval]))
-                seriesNameFormat: Errors
                 datasource:
                   kind: PrometheusDatasource
                   spec:
                     dataset: astronomy-demo
+                query: >-
+                  sum(rate({otel_metric_name="dash0.spans", service_name="payment", otel_span_status_code="ERROR"}[$__rate_interval]))
+                seriesNameFormat: Errors
     payment-operations-pie:
       kind: Panel
       spec:
@@ -240,9 +404,9 @@ spec:
           spec:
             calculation: last-number
             format:
-              unit: decimal
               decimalPlaces: 0
               shortValues: true
+              unit: decimal
             thresholds: {}
         queries:
         - kind: TimeSeriesQuery
@@ -250,13 +414,288 @@ spec:
             plugin:
               kind: PrometheusTimeSeriesQuery
               spec:
-                query: >-
-                  sum by (dash0_operation_name) (rate({otel_metric_name="dash0.spans", service_name="payment"}[$__rate_interval]))
-                seriesNameFormat: '{{dash0_operation_name}}'
                 datasource:
                   kind: PrometheusDatasource
                   spec:
                     dataset: astronomy-demo
+                query: >-
+                  sum by (dash0_operation_name) (rate({otel_metric_name="dash0.spans", service_name="payment"}[$__rate_interval]))
+                seriesNameFormat: "{{dash0_operation_name}}"
+    payment-transaction-rate:
+      kind: Panel
+      spec:
+        display:
+          name: Payment Transaction Rate
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              position: right
+            visual:
+              display: bar
+            yAxis:
+              label: Transactions / interval
+        queries:
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                datasource:
+                  kind: PrometheusDatasource
+                  spec:
+                    dataset: astronomy-demo
+                query: >-
+                  sum(increase({otel_metric_name="app.payment.transactions", service_name="payment"}[$__rate_interval]))
+                seriesNameFormat: Transactions
+    charge-requests-by-card-type:
+      kind: Panel
+      spec:
+        display:
+          name: Charge Requests by Card Type
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              position: right
+            visual:
+              display: bar
+              stack: all
+            yAxis:
+              label: Charges
+        queries:
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                datasource:
+                  kind: PrometheusDatasource
+                  spec:
+                    dataset: astronomy-demo
+                query: >-
+                  sum by (app_payment_card_type) (increase({otel_metric_name="dash0.spans", service_name="payment", dash0_operation_name="oteldemo.PaymentService/Charge"}[$__rate_interval]))
+                seriesNameFormat: "{{app_payment_card_type}}"
+    v8-heap-memory:
+      kind: Panel
+      spec:
+        display:
+          name: V8 Heap Memory
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              position: right
+            visual:
+              areaOpacity: 0.3
+            yAxis:
+              label: Bytes
+              format:
+                unit: bytes
+        queries:
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                datasource:
+                  kind: PrometheusDatasource
+                  spec:
+                    dataset: astronomy-demo
+                query: >-
+                  avg({otel_metric_name="v8js.memory.heap.used", service_name="payment"})
+                seriesNameFormat: Heap Used
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                datasource:
+                  kind: PrometheusDatasource
+                  spec:
+                    dataset: astronomy-demo
+                query: >-
+                  avg by (v8js_heap_space_name) ({otel_metric_name="v8js.memory.heap.space.physical_size", service_name="payment"})
+                seriesNameFormat: "Physical ({{v8js_heap_space_name}})"
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                datasource:
+                  kind: PrometheusDatasource
+                  spec:
+                    dataset: astronomy-demo
+                query: >-
+                  avg({otel_metric_name="v8js.memory.heap.limit", service_name="payment"})
+                seriesNameFormat: Heap Limit
+    v8-heap-available-space:
+      kind: Panel
+      spec:
+        display:
+          name: V8 Heap Available Space
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              position: right
+            visual:
+              areaOpacity: 0.3
+            yAxis:
+              label: Bytes
+              format:
+                unit: bytes
+        queries:
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                datasource:
+                  kind: PrometheusDatasource
+                  spec:
+                    dataset: astronomy-demo
+                query: >-
+                  avg by (v8js_heap_space_name) ({otel_metric_name="v8js.memory.heap.space.available_size", service_name="payment"})
+                seriesNameFormat: "{{v8js_heap_space_name}}"
+    eventloop-delay-percentiles:
+      kind: Panel
+      spec:
+        display:
+          name: Event Loop Delay (percentiles)
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              position: right
+            yAxis:
+              label: Delay (s)
+        queries:
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                datasource:
+                  kind: PrometheusDatasource
+                  spec:
+                    dataset: astronomy-demo
+                query: >-
+                  avg({otel_metric_name="nodejs.eventloop.delay.p50", service_name="payment"})
+                seriesNameFormat: P50
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                datasource:
+                  kind: PrometheusDatasource
+                  spec:
+                    dataset: astronomy-demo
+                query: >-
+                  avg({otel_metric_name="nodejs.eventloop.delay.p90", service_name="payment"})
+                seriesNameFormat: P90
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                datasource:
+                  kind: PrometheusDatasource
+                  spec:
+                    dataset: astronomy-demo
+                query: >-
+                  avg({otel_metric_name="nodejs.eventloop.delay.p99", service_name="payment"})
+                seriesNameFormat: P99
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                datasource:
+                  kind: PrometheusDatasource
+                  spec:
+                    dataset: astronomy-demo
+                query: >-
+                  max({otel_metric_name="nodejs.eventloop.delay.max", service_name="payment"})
+                seriesNameFormat: Max
+    eventloop-utilization:
+      kind: Panel
+      spec:
+        display:
+          name: Event Loop Utilization
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              position: right
+            visual:
+              areaOpacity: 0.3
+            yAxis:
+              label: Utilization (0-1)
+        queries:
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                datasource:
+                  kind: PrometheusDatasource
+                  spec:
+                    dataset: astronomy-demo
+                query: >-
+                  avg({otel_metric_name="nodejs.eventloop.utilization", service_name="payment"})
+                seriesNameFormat: Utilization
+    eventloop-processing-time:
+      kind: Panel
+      spec:
+        display:
+          name: Event Loop Processing Time
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              position: right
+            yAxis:
+              label: Time (s)
+        queries:
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                datasource:
+                  kind: PrometheusDatasource
+                  spec:
+                    dataset: astronomy-demo
+                query: >-
+                  sum(rate({otel_metric_name="nodejs.eventloop.time", service_name="payment"}[$__rate_interval]))
+                seriesNameFormat: Event Loop Time
+    eventloop-delay-jitter:
+      kind: Panel
+      spec:
+        display:
+          name: Event Loop Delay Jitter (stddev)
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              position: right
+            yAxis:
+              label: Stddev (s)
+        queries:
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                datasource:
+                  kind: PrometheusDatasource
+                  spec:
+                    dataset: astronomy-demo
+                query: >-
+                  avg({otel_metric_name="nodejs.eventloop.delay.stddev", service_name="payment"})
+                seriesNameFormat: Delay Stddev
     payment-log-volume:
       kind: Panel
       spec:
@@ -267,21 +706,20 @@ spec:
           spec:
             legend:
               position: right
-            yAxis:
-              label: logs/sec
             visual:
               display: bar
+            yAxis:
+              label: logs/sec
         queries:
         - kind: TimeSeriesQuery
           spec:
             plugin:
               kind: PrometheusTimeSeriesQuery
               spec:
-                query: >-
-                  sum by (otel_log_severity_range) (rate({otel_metric_name="dash0.logs", service_name="payment"}[$__rate_interval]))
-                seriesNameFormat: '{{otel_log_severity_range}}'
                 datasource:
                   kind: PrometheusDatasource
                   spec:
                     dataset: astronomy-demo
-  variables: []
+                query: >-
+                  sum by (otel_log_severity_range) (rate({otel_metric_name="dash0.logs", service_name="payment"}[$__rate_interval]))
+                seriesNameFormat: "{{otel_log_severity_range}}"
