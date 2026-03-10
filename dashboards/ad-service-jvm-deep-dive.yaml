@@ -1,0 +1,618 @@
+apiVersion: perses.dev/v1alpha1
+kind: PersesDashboard
+metadata:
+  name: ad-service-jvm-deep-dive
+  namespace: otel-demo
+  labels:
+    app.kubernetes.io/managed-by: dash0-operator
+    dash0.com/origin: api-0740cae8-4576-4a2f-af48-663fbf7b967d
+spec:
+  display:
+    name: Ad Service (Java) - JVM Deep Dive & Service Health
+  duration: 1h
+  variables: []
+  layouts:
+  - kind: Grid
+    spec:
+      display:
+        title: Service KPIs
+        collapse:
+          open: true
+      items:
+      - content:
+          $ref: '#/spec/panels/throughput--spans-sec-'
+        x: 0
+        y: 0
+        width: 6
+        height: 4
+      - content:
+          $ref: '#/spec/panels/error-rate----'
+        x: 6
+        y: 0
+        width: 6
+        height: 4
+      - content:
+          $ref: '#/spec/panels/jvm-cpu-utilization-stat'
+        x: 12
+        y: 0
+        width: 6
+        height: 4
+      - content:
+          $ref: '#/spec/panels/jvm-thread-count-stat'
+        x: 18
+        y: 0
+        width: 6
+        height: 4
+  - kind: Grid
+    spec:
+      display:
+        title: Service Traffic & Errors
+        collapse:
+          open: true
+      items:
+      - content:
+          $ref: '#/spec/panels/ad-service-span-rate-over-time'
+        x: 0
+        y: 0
+        width: 12
+        height: 8
+      - content:
+          $ref: '#/spec/panels/ad-service-error-rate-over-time'
+        x: 12
+        y: 0
+        width: 12
+        height: 8
+  - kind: Grid
+    spec:
+      display:
+        title: JVM Memory
+        collapse:
+          open: true
+      items:
+      - content:
+          $ref: '#/spec/panels/jvm-memory-used'
+        x: 0
+        y: 0
+        width: 12
+        height: 8
+      - content:
+          $ref: '#/spec/panels/jvm-memory-committed-vs-limit'
+        x: 12
+        y: 0
+        width: 12
+        height: 8
+      - content:
+          $ref: '#/spec/panels/jvm-memory-used-after-last-gc'
+        x: 0
+        y: 8
+        width: 12
+        height: 8
+      - content:
+          $ref: '#/spec/panels/jvm-memory-utilization-used-limit'
+        x: 12
+        y: 8
+        width: 12
+        height: 8
+  - kind: Grid
+    spec:
+      display:
+        title: JVM Garbage Collection
+        collapse:
+          open: true
+      items:
+      - content:
+          $ref: '#/spec/panels/jvm-gc-duration'
+        x: 0
+        y: 0
+        width: 12
+        height: 8
+      - content:
+          $ref: '#/spec/panels/jvm-gc-pause-time'
+        x: 12
+        y: 0
+        width: 12
+        height: 8
+  - kind: Grid
+    spec:
+      display:
+        title: JVM CPU
+        collapse:
+          open: true
+      items:
+      - content:
+          $ref: '#/spec/panels/jvm-cpu-recent-utilization'
+        x: 0
+        y: 0
+        width: 12
+        height: 8
+      - content:
+          $ref: '#/spec/panels/jvm-cpu-time-rate'
+        x: 12
+        y: 0
+        width: 12
+        height: 8
+  - kind: Grid
+    spec:
+      display:
+        title: JVM Threads & Classes
+        collapse:
+          open: true
+      items:
+      - content:
+          $ref: '#/spec/panels/jvm-thread-count-over-time'
+        x: 0
+        y: 0
+        width: 12
+        height: 8
+      - content:
+          $ref: '#/spec/panels/jvm-classes-loaded-over-time'
+        x: 12
+        y: 0
+        width: 12
+        height: 8
+      - content:
+          $ref: '#/spec/panels/jvm-current-class-count'
+        x: 0
+        y: 8
+        width: 8
+        height: 8
+      - content:
+          $ref: '#/spec/panels/jvm-classes-unloaded'
+        x: 8
+        y: 8
+        width: 8
+        height: 8
+      - content:
+          $ref: '#/spec/panels/jvm-available-cpu-cores'
+        x: 16
+        y: 8
+        width: 8
+        height: 8
+  panels:
+    throughput--spans-sec-:
+      kind: Panel
+      spec:
+        display:
+          name: Throughput (spans/sec)
+        plugin:
+          kind: StatChart
+          spec:
+            calculation: last-number
+            format:
+              decimalPlaces: 2
+              unit: decimal
+        queries:
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: >-
+                  sum(rate({otel_metric_name="dash0.spans", service_name="ad"}[$__rate_interval]))
+                seriesNameFormat: spans/sec
+    error-rate----:
+      kind: Panel
+      spec:
+        display:
+          name: Error Rate (%)
+        plugin:
+          kind: StatChart
+          spec:
+            calculation: last-number
+            format:
+              decimalPlaces: 2
+              unit: percent
+            thresholds:
+              steps:
+              - color: '#7dc540'
+                value: 0
+              - color: '#f5d30f'
+                value: 5
+              - color: '#dc172a'
+                value: 20
+        queries:
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: >-
+                  sum(rate({otel_metric_name="dash0.spans", service_name="ad", otel_span_status_code="ERROR"}[$__rate_interval])) / clamp_min(sum(rate({otel_metric_name="dash0.spans", service_name="ad"}[$__rate_interval])),
+                  1e-10) * 100
+                seriesNameFormat: Error %
+    jvm-cpu-utilization-stat:
+      kind: Panel
+      spec:
+        display:
+          name: JVM CPU Utilization
+        plugin:
+          kind: StatChart
+          spec:
+            calculation: last-number
+            format:
+              decimalPlaces: 1
+              unit: percent
+            thresholds:
+              steps:
+              - color: '#7dc540'
+                value: 0
+              - color: '#f5d30f'
+                value: 60
+              - color: '#dc172a'
+                value: 85
+        queries:
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: >-
+                  avg({otel_metric_name="jvm.cpu.recent_utilization", service_name="ad"}) * 100
+                seriesNameFormat: CPU %
+    jvm-thread-count-stat:
+      kind: Panel
+      spec:
+        display:
+          name: JVM Thread Count
+        plugin:
+          kind: StatChart
+          spec:
+            calculation: last-number
+            format:
+              unit: decimal
+        queries:
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: >-
+                  sum({otel_metric_name="jvm.thread.count", service_name="ad"})
+                seriesNameFormat: Threads
+    ad-service-span-rate-over-time:
+      kind: Panel
+      spec:
+        display:
+          name: Ad Service Span Rate Over Time
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              position: right
+            yAxis:
+              label: Spans/sec
+        queries:
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: >-
+                  sum(rate({otel_metric_name="dash0.spans", service_name="ad"}[$__rate_interval]))
+                seriesNameFormat: Total
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: >-
+                  sum(rate({otel_metric_name="dash0.spans", service_name="ad", otel_span_status_code="OK"}[$__rate_interval]))
+                seriesNameFormat: OK
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: >-
+                  sum(rate({otel_metric_name="dash0.spans", service_name="ad", otel_span_status_code="ERROR"}[$__rate_interval]))
+                seriesNameFormat: Errors
+    ad-service-error-rate-over-time:
+      kind: Panel
+      spec:
+        display:
+          name: Ad Service Error Rate % Over Time
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              position: right
+            yAxis:
+              label: Error %
+        queries:
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: >-
+                  sum(rate({otel_metric_name="dash0.spans", service_name="ad", otel_span_status_code="ERROR"}[$__rate_interval])) / clamp_min(sum(rate({otel_metric_name="dash0.spans", service_name="ad"}[$__rate_interval])),
+                  1e-10) * 100
+                seriesNameFormat: Error Rate %
+    jvm-memory-used:
+      kind: Panel
+      spec:
+        display:
+          name: JVM Memory Used
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              position: right
+            yAxis:
+              label: Bytes
+        queries:
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: >-
+                  sum by (jvm_memory_pool_name) ({otel_metric_name="jvm.memory.used", service_name="ad"})
+                seriesNameFormat: "{{jvm_memory_pool_name}}"
+    jvm-memory-committed-vs-limit:
+      kind: Panel
+      spec:
+        display:
+          name: JVM Memory Committed vs Limit
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              position: right
+            yAxis:
+              label: Bytes
+        queries:
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: >-
+                  sum({otel_metric_name="jvm.memory.committed", service_name="ad"})
+                seriesNameFormat: Committed
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: >-
+                  sum({otel_metric_name="jvm.memory.limit", service_name="ad"})
+                seriesNameFormat: Limit
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: >-
+                  sum({otel_metric_name="jvm.memory.used", service_name="ad"})
+                seriesNameFormat: Used
+    jvm-memory-used-after-last-gc:
+      kind: Panel
+      spec:
+        display:
+          name: JVM Memory Used After Last GC
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              position: right
+            yAxis:
+              label: Bytes
+        queries:
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: >-
+                  sum by (jvm_memory_pool_name) ({otel_metric_name="jvm.memory.used_after_last_gc", service_name="ad"})
+                seriesNameFormat: "{{jvm_memory_pool_name}}"
+    jvm-memory-utilization-used-limit:
+      kind: Panel
+      spec:
+        display:
+          name: JVM Memory Utilization % (Used / Limit)
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              position: right
+            yAxis:
+              label: '%'
+        queries:
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: >-
+                  sum({otel_metric_name="jvm.memory.used", service_name="ad"}) / clamp_min(sum({otel_metric_name="jvm.memory.limit", service_name="ad"}), 1) * 100
+                seriesNameFormat: Memory Utilization %
+    jvm-gc-duration:
+      kind: Panel
+      spec:
+        display:
+          name: JVM GC Duration
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              position: right
+            yAxis:
+              label: Seconds
+        queries:
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: >-
+                  rate({otel_metric_name="jvm.gc.duration", service_name="ad"}[$__rate_interval])
+                seriesNameFormat: GC Duration Rate
+    jvm-gc-pause-time:
+      kind: Panel
+      spec:
+        display:
+          name: JVM GC Pause Time (cumulative increase)
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              position: right
+            yAxis:
+              label: Seconds
+        queries:
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: >-
+                  increase({otel_metric_name="jvm.gc.duration", service_name="ad"}[5m])
+                seriesNameFormat: GC Time (5m window)
+    jvm-cpu-recent-utilization:
+      kind: Panel
+      spec:
+        display:
+          name: JVM CPU Recent Utilization
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              position: right
+            yAxis:
+              label: '%'
+        queries:
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: >-
+                  {otel_metric_name="jvm.cpu.recent_utilization", service_name="ad"} * 100
+                seriesNameFormat: CPU Utilization %
+    jvm-cpu-time-rate:
+      kind: Panel
+      spec:
+        display:
+          name: JVM CPU Time (rate)
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              position: right
+            yAxis:
+              label: Seconds/sec
+        queries:
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: >-
+                  rate({otel_metric_name="jvm.cpu.time", service_name="ad"}[$__rate_interval])
+                seriesNameFormat: CPU Time Rate
+    jvm-thread-count-over-time:
+      kind: Panel
+      spec:
+        display:
+          name: JVM Thread Count Over Time
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              position: right
+            yAxis:
+              label: Threads
+        queries:
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: >-
+                  {otel_metric_name="jvm.thread.count", service_name="ad"}
+                seriesNameFormat: Threads
+    jvm-classes-loaded-over-time:
+      kind: Panel
+      spec:
+        display:
+          name: JVM Classes Loaded Over Time
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              position: right
+            yAxis:
+              label: Classes
+        queries:
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: >-
+                  {otel_metric_name="jvm.class.loaded", service_name="ad"}
+                seriesNameFormat: Loaded
+    jvm-current-class-count:
+      kind: Panel
+      spec:
+        display:
+          name: JVM Current Class Count
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              position: right
+            yAxis:
+              label: Classes
+        queries:
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: >-
+                  {otel_metric_name="jvm.class.count", service_name="ad"}
+                seriesNameFormat: Current Count
+    jvm-classes-unloaded:
+      kind: Panel
+      spec:
+        display:
+          name: JVM Classes Unloaded
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              position: right
+            yAxis:
+              label: Classes
+        queries:
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: >-
+                  rate({otel_metric_name="jvm.class.unloaded", service_name="ad"}[$__rate_interval])
+                seriesNameFormat: Unloaded Rate
+    jvm-available-cpu-cores:
+      kind: Panel
+      spec:
+        display:
+          name: JVM Available CPU Cores
+        plugin:
+          kind: StatChart
+          spec:
+            calculation: last-number
+            format:
+              unit: decimal
+        queries:
+        - kind: TimeSeriesQuery
+          spec:
+            plugin:
+              kind: PrometheusTimeSeriesQuery
+              spec:
+                query: >-
+                  {otel_metric_name="jvm.cpu.count", service_name="ad"}
+                seriesNameFormat: CPU Cores
