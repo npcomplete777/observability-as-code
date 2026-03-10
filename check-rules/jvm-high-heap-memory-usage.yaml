@@ -1,0 +1,30 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: jvm-high-heap-memory-usage
+  namespace: otel-demo
+  labels:
+    app.kubernetes.io/managed-by: dash0-operator
+spec:
+  groups:
+    - name: jvm-alerts
+      interval: 1m
+      rules:
+        - alert: JvmHighHeapMemoryUsage
+          expr: >-
+            {otel_metric_name="jvm.memory.used"} / {otel_metric_name="jvm.memory.limit"} > 0.85
+          for: 5m
+          labels:
+            severity: critical
+            domain: jvm
+            component: memory
+            source: kibana-migration
+          annotations:
+            summary: "JVM heap memory usage exceeds 85% of limit"
+            description: >-
+              Migrated from Kibana rule: [JVM] High Heap Memory Usage (>85%)
+              (type: .es-query, ID: dab8f6d7-de1a-4f1c-b475-e82f9da18cfe).
+              Original rule used a Painless script to compute
+              jvm.memory.used / jvm.memory.limit > 0.85 with > 3 hits
+              in 5m window on otel-metrics*, evaluated every 1m.
+              Tags: jvm, memory, heap, production, critical.
