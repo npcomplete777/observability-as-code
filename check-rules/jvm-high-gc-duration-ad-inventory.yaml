@@ -1,0 +1,35 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: jvm-high-gc-duration-ad-inventory
+  namespace: otel-demo
+  labels:
+    app.kubernetes.io/managed-by: dash0-operator
+spec:
+  groups:
+    - name: jvm-gc-alerts
+      interval: 1m
+      rules:
+        - alert: JvmHighGcDurationAdInventory
+          expr: >-
+            histogram_quantile(0.95,
+              sum by (service_name, le) (
+                rate({otel_metric_name="jvm.gc.duration", otel_metric_type="histogram", service_name=~"^(ad|inventory)$"}[5m])
+              )
+            ) > 0.5
+          for: 5m
+          labels:
+            severity: critical
+            domain: jvm
+            component: gc
+            source: jvm-health-dashboard
+          annotations:
+            summary: "JVM GC pause duration P95 exceeds 500ms for ad/inventory services"
+            description: >-
+              The 95th percentile garbage collection pause duration for
+              {{ $labels.service_name }} has exceeded 500ms for more than
+              5 minutes. Sustained high GC pauses indicate heap pressure,
+              potential memory leaks, or undersized heap configurations.
+              Correlate with heap utilization and thread count from the
+              JVM Health - Ad & Inventory Services dashboard.
+              Tags: jvm, gc, garbage-collection, ad, inventory, production, critical.
